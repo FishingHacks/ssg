@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title><% title if title_override else '$title - ${name}\'s blog' %></title>
+        <meta name="author" content="<% author ? name %>">
+        <%if description then%>
+        <meta name="description" content="<% description %>">
+        <%end%>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="<% resource_link('css/index.css') %>">
+        <link rel="stylesheet" href="<% resource_link('scss/index.scss') %>">
+        <script src="<% resource_link('ts/index.ts') %>"></script>
+    </head>
+    <body>
+        <%body%> <!-- the content of the thing that's extending this -->
+    </body>
+</html>
