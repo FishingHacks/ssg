@@ -32,9 +32,9 @@ expression = "'img_$filename'"
 [default_keys]
 name = "wiru"
 email = "dev.willians.faria@gmail.com"
-homepage = "https://wiru.st/"
 
 [config]
 output = "dist/"
-index = "index.md" # default: "index.html"
-err_page = "_404.html" # default: "_404.html"
+err_page = "_404.md" # default: "_404.md"
+index_page = "_index.md" # default: "_index.md"
+basic_page = "https://wiru.st/"

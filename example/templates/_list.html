@@ -1,0 +1,6 @@
+{% block "main" %}
+
+<h1>Entries:</h1>
+{%for entry in page.entires do%}
+<a href="{{entry.link}}">{{entry.title}}</a>
+{%end%}

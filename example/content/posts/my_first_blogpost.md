@@ -1,7 +1,8 @@
-+++
-title = current_file.name.replace('_', ' ').to_title() // Result: "My First Blogpost"
-description = "My first fancy blogpost :3"
-slug = current_file.name.replace('_', '-')
-+++
+---
+title = My first Blogpost
+description = My fancy blogpost :3
+author = 4wiru
+extends = _post.html
+---
 
 Hewwo :3 this is my first blogpost Xd
