@@ -1,3 +1,7 @@
+---
+author: 4wiru
+---
+
 # ![user profile picture](/user_profile.png) Wiru
 
 Welcome to my website :3
