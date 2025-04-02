@@ -1,3 +1,8 @@
+output = "dist/"
+err_page = "_404.md" # default: "_404.md"
+index_page = "_index.md" # default: "_index.md"
+basic_page = "https://wiru.st/"
+
 [[resources.scss]]
 type = "run.command"
 command = "scss_css_transpiler"
@@ -32,9 +37,3 @@ expression = "'img_$filename'"
 [default_keys]
 name = "wiru"
 email = "dev.willians.faria@gmail.com"
-
-[config]
-output = "dist/"
-err_page = "_404.md" # default: "_404.md"
-index_page = "_index.md" # default: "_index.md"
-basic_page = "https://wiru.st/"
