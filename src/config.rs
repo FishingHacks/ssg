@@ -1,13 +1,16 @@
-use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 #[derive(Debug)]
 pub struct SiteConfig {
-    resources_dirs: Vec<PathBuf>,
-    templates_dir: PathBuf,
-    content_dir: PathBuf,
-    out_dir: PathBuf,
-    index_page: String,
+    pub port: u16,
+    pub resources_dirs: Vec<PathBuf>,
+    pub templates_dir: PathBuf,
+    pub content_dir: PathBuf,
+    pub out_dir: PathBuf,
+    pub index_page: String,
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
@@ -20,7 +23,7 @@ pub struct UnresolvedSiteConfig {
 }
 
 impl SiteConfig {
-    pub fn from_unresolved(root_dir: &Path, unresolved: UnresolvedSiteConfig) -> Self {
+    pub fn from_unresolved(root_dir: &Path, port: u16, unresolved: UnresolvedSiteConfig) -> Self {
         let resources_dirs = match unresolved.resources_dirs {
             Some(dirs) => dirs.into_iter().map(|v| root_dir.join(v)).collect(),
             None => vec![root_dir.join("resources")],
@@ -29,7 +32,9 @@ impl SiteConfig {
         let content_dir = resolve_path(root_dir, unresolved.content_dir, Path::new("content"));
         let out_dir = resolve_path(root_dir, unresolved.out_dir, Path::new("dist"));
         let index_page = unresolved.index_page.unwrap_or_else(|| "_index.md".into());
+
         Self {
+            port,
             resources_dirs,
             templates_dir,
             content_dir,
@@ -39,8 +44,32 @@ impl SiteConfig {
     }
 }
 
+#[derive(Debug, Error)]
+pub enum ConfigReadError {
+    #[error("{0}")]
+    Toml(#[from] toml::de::Error),
+    #[error("{0}")]
+    IO(#[from] std::io::Error),
+}
+
 fn resolve_path(root_dir: &Path, path: Option<PathBuf>, default: &'static Path) -> PathBuf {
     let Some(path) = path else { return root_dir.join(default) };
     // this sucks, but i would like to have absolute paths
     root_dir.join(path)
+}
+
+pub fn load(path: Option<PathBuf>, port: u16) -> Result<SiteConfig, ConfigReadError> {
+    let path = path
+        .map(Ok)
+        .unwrap_or_else(std::env::current_dir)
+        .expect("failed to get the current directory");
+
+    let config_path = path.join("config.toml");
+    if !config_path.exists() {
+        return Ok(SiteConfig::from_unresolved(&path, port, Default::default()));
+    }
+
+    let config_str = std::fs::read_to_string(&config_path)?;
+    let unresolved_config = toml::from_str::<UnresolvedSiteConfig>(&config_str)?;
+    Ok(SiteConfig::from_unresolved(&path, port, unresolved_config))
 }

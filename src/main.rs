@@ -1,11 +1,14 @@
 mod config;
 mod content;
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use config::{SiteConfig, UnresolvedSiteConfig};
+use config::{ConfigReadError, SiteConfig};
+use content::{ContentParseError, ContentParser, FileType, parser_from_filetype};
 use thiserror::Error;
+
+static DEFAULT_PORT: u16 = 8000;
 
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None)]
@@ -17,9 +20,9 @@ struct Args {
 #[derive(Debug, Subcommand)]
 enum Commands {
     Serve {
-        #[arg(short, long)]
+        #[arg(long)]
         path: Option<PathBuf>,
-        #[arg(short, long)]
+        #[arg(long)]
         port: Option<u16>,
     },
     Build {
@@ -28,55 +31,73 @@ enum Commands {
     },
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     match args.command {
         Commands::Serve { path, port } => {
-            let path = path
-                .map(Ok)
-                .unwrap_or_else(std::env::current_dir)
-                .expect("failed to get the current directory");
-            let port = port.unwrap_or(8000);
-            let config = build(&path).expect("failed to build");
-            // serve (open up a server)
+            let port = port.unwrap_or(DEFAULT_PORT);
+            let config = config::load(path, port)?;
+            build(config).await?;
         }
-        Commands::Build { path: Some(path) } => _ = build(&path).expect("failed to build"),
-        Commands::Build { path: None } => _ = build(&std::env::current_dir().unwrap()).expect("failed to build"),
+        Commands::Build { .. } => todo!(),
     }
+
+    Ok(())
 }
 
 #[derive(Debug, Error)]
 enum BuildError {
     #[error("{0}")]
     Config(#[from] ConfigReadError),
-}
-
-#[derive(Debug, Error)]
-enum ConfigReadError {
     #[error("{0}")]
-    Toml(#[from] toml::de::Error),
+    ContentParse(#[from] ContentParseError),
     #[error("{0}")]
     IO(#[from] std::io::Error),
+    #[error("Task join error: {0}")]
+    Join(#[from] tokio::task::JoinError),
 }
 
-fn read_config(root_dir: &Path) -> Result<SiteConfig, ConfigReadError> {
-    let config_path = root_dir.join("config.toml");
-    if !config_path.exists() {
-        return Ok(SiteConfig::from_unresolved(root_dir, Default::default()));
+async fn build(config: SiteConfig) -> Result<(), BuildError> {
+    std::fs::create_dir_all(&config.out_dir)?;
+
+    let content_dir = &config.content_dir;
+    if content_dir.exists() {
+        let entries: Vec<_> = walkdir::WalkDir::new(content_dir)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .collect();
+
+        let mut handles = vec![];
+        for entry in entries {
+            let path = entry.path().to_path_buf();
+
+            if path.is_dir() {
+                continue;
+            }
+
+            let filetype = FileType::from(path.extension());
+            let handle = tokio::spawn(async move {
+                match filetype {
+                    FileType::Markdown => {
+                        let content = tokio::fs::read_to_string(&path).await?;
+                        let parser = parser_from_filetype(FileType::Markdown);
+                        let (_meta, _html) = parser.parse(&content)?;
+                        // TODO: actually do something here lol
+                    }
+                    _ => todo!(),
+                }
+                Ok::<_, BuildError>(())
+            });
+
+            handles.push(handle);
+        }
+
+        for handle in handles {
+            handle.await??;
+        }
     }
-    let config_str = std::fs::read_to_string(&config_path)?;
-    let unresolved_config = toml::from_str::<UnresolvedSiteConfig>(&config_str)?;
-    Ok(SiteConfig::from_unresolved(root_dir, unresolved_config))
-}
 
-fn build(root_dir: &Path) -> Result<SiteConfig, BuildError> {
-    // read config file
-    let config = read_config(root_dir)?;
-
-    // index resources
-    // index templates
-    // parse content
-    // build website (copy files and stuff)
-    todo!()
+    Ok(())
 }
