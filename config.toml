@@ -1,0 +1,16 @@
+[[resources.webp]]
+type = "none"
+
+[[resources.webp]]
+type = "none"
+
+[[resources.ts]]
+type = "none"
+
+[[resources.ts]]
+type = "run.command"
+command = "tsc"
+arguments = ["--root $rootdir", "a", "b"]
+new_extension = "js"
+output = "file"
+input = "stdin"

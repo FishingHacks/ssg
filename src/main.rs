@@ -1,5 +1,6 @@
 mod config;
 mod content;
+mod resources;
 
 use std::path::PathBuf;
 
@@ -49,11 +50,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[derive(Debug, Error)]
 enum BuildError {
-    #[error("{0}")]
+    #[error(transparent)]
     Config(#[from] ConfigReadError),
-    #[error("{0}")]
+    #[error(transparent)]
     ContentParse(#[from] ContentParseError),
-    #[error("{0}")]
+    #[error(transparent)]
     IO(#[from] std::io::Error),
     #[error("Task join error: {0}")]
     Join(#[from] tokio::task::JoinError),

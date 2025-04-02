@@ -1,7 +1,12 @@
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+
+use crate::resources::Pipeline;
 
 #[derive(Debug)]
 pub struct SiteConfig {
@@ -11,6 +16,7 @@ pub struct SiteConfig {
     pub content_dir: PathBuf,
     pub out_dir: PathBuf,
     pub index_page: String,
+    pub pipelines: HashMap<String, Pipeline>,
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
@@ -20,6 +26,7 @@ pub struct UnresolvedSiteConfig {
     content_dir: Option<PathBuf>,
     out_dir: Option<PathBuf>,
     index_page: Option<String>,
+    resources: Option<HashMap<String, Pipeline>>,
 }
 
 impl SiteConfig {
@@ -40,6 +47,7 @@ impl SiteConfig {
             content_dir,
             out_dir,
             index_page,
+            pipelines: unresolved.resources.unwrap_or_default(),
         }
     }
 }
@@ -58,18 +66,18 @@ fn resolve_path(root_dir: &Path, path: Option<PathBuf>, default: &'static Path) 
     root_dir.join(path)
 }
 
-pub fn load(path: Option<PathBuf>, port: u16) -> Result<SiteConfig, ConfigReadError> {
-    let path = path
-        .map(Ok)
-        .unwrap_or_else(std::env::current_dir)
-        .expect("failed to get the current directory");
+pub fn load(root_dir: Option<PathBuf>, port: u16) -> Result<SiteConfig, ConfigReadError> {
+    let root_dir = match root_dir {
+        Some(v) => v,
+        None => std::env::current_dir()?,
+    };
 
-    let config_path = path.join("config.toml");
+    let config_path = root_dir.join("config.toml");
     if !config_path.exists() {
-        return Ok(SiteConfig::from_unresolved(&path, port, Default::default()));
+        return Ok(SiteConfig::from_unresolved(&root_dir, port, Default::default()));
     }
 
     let config_str = std::fs::read_to_string(&config_path)?;
     let unresolved_config = toml::from_str::<UnresolvedSiteConfig>(&config_str)?;
-    Ok(SiteConfig::from_unresolved(&path, port, unresolved_config))
+    Ok(SiteConfig::from_unresolved(&root_dir, port, unresolved_config))
 }
