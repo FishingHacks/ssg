@@ -1,6 +1,8 @@
-use serde::{Deserialize, Serialize};
-use std::{fmt::Debug, fmt::Display, path::PathBuf, process::ExitStatus};
+use std::fmt::{Debug, Display};
+use std::path::PathBuf;
+use std::process::ExitStatus;
 
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::config::SiteConfig;

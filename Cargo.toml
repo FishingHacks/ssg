@@ -13,3 +13,4 @@ comrak = "0.37.0"
 walkdir = "2.5.0"
 gray_matter = "0.2.8"
 tempfile = "3.19.1"
+miette = { version = "7.5.0", features = ["fancy"] }

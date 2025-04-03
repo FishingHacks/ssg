@@ -1,67 +1,112 @@
+use std::sync::Arc;
+
 use comrak::{ComrakOptions, markdown_to_html};
 use gray_matter::Matter;
 use gray_matter::engine::{TOML, YAML};
+use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
-use super::{ContentMeta, ContentParseError, ContentParser, Html};
-use crate::content::UnresolvedContentMeta;
+use super::{ContentPage, ContentParseError, ContentParser, ParsePageCtx};
+use crate::content::{ContentMeta, MetaResolveContext, UnresolvedContentMeta};
 
 #[derive(Debug, PartialEq)]
-enum FrontmatterEngine {
+pub enum FrontmatterEngine {
     Yaml,
     Toml,
 }
 
-#[derive(Debug, Error, PartialEq)]
-pub enum FrontmatterError {
-    #[error("No frontmatter found")]
-    NoFrontmatter,
+impl FrontmatterEngine {
+    pub fn delimiter(&self) -> &'static str {
+        match self {
+            Self::Yaml => "---",
+            Self::Toml => "+++",
+        }
+    }
 }
 
 #[derive(Debug)]
 pub struct Markdown;
 
-fn detect_frontmatter_engine<S: AsRef<str>>(content: S) -> Result<FrontmatterEngine, FrontmatterError> {
-    let content = content.as_ref();
+#[derive(Debug, Error, Diagnostic)]
+#[error("While parsing markdown frontmatter")]
+#[diagnostic()]
+pub struct FrontmatterError {
+    #[source_code]
+    src: Arc<String>,
+    #[label = "in this section"]
+    at: SourceSpan,
+    #[help]
+    help: String,
+}
+
+fn detect_frontmatter_engine(content: &Arc<String>) -> Result<FrontmatterEngine, FrontmatterError> {
     if content.starts_with("---") {
         Ok(FrontmatterEngine::Yaml)
     } else if content.starts_with("+++") {
         Ok(FrontmatterEngine::Toml)
     } else {
-        Err(FrontmatterError::NoFrontmatter)
+        Err(FrontmatterError {
+            src: content.clone(),
+            at: (0..4).into(),
+            help: "invalid frontmatter prefix".into(),
+        })
     }
 }
 
 impl ContentParser for Markdown {
-    fn parse<S: AsRef<str>>(&self, content: S) -> Result<(ContentMeta, Html), ContentParseError> {
-        let content_str = content.as_ref();
-
-        let engine = detect_frontmatter_engine(content_str)?;
+    fn parse(&self, parse_ctx: ParsePageCtx) -> Result<ContentPage, ContentParseError> {
+        let engine = detect_frontmatter_engine(&parse_ctx.source)?;
 
         let result = match engine {
             FrontmatterEngine::Yaml => {
                 let matter = Matter::<YAML>::new();
-                matter.parse_with_struct::<UnresolvedContentMeta>(content_str)
+                matter.parse(&parse_ctx.source)
             }
             FrontmatterEngine::Toml => {
                 let mut matter = Matter::<TOML>::new();
                 matter.delimiter = "+++".to_string();
-                matter.parse_with_struct::<UnresolvedContentMeta>(content_str)
+                matter.parse(&parse_ctx.source)
             }
         };
 
-        let Some(result) = result else {
-            return Err(FrontmatterError::NoFrontmatter.into());
+        let Some(meta) = result.data else {
+            let max_ctx = parse_ctx.source.len().min(100);
+            return Err(FrontmatterError {
+                at: (0..max_ctx).into(),
+                src: parse_ctx.source,
+                help: format!(
+                    "content frontmatter must be closed by the `{}` delimiter",
+                    engine.delimiter()
+                ),
+            }
+            .into());
         };
 
-        let content_meta = result.data;
+        let meta = meta
+            .deserialize::<UnresolvedContentMeta>()
+            .expect("encountered valid toml that wasn't supported by ContentMeta.");
+
         let content_body = result.content;
 
         let mut options = ComrakOptions::default();
         options.render.unsafe_ = true;
         let html = markdown_to_html(&content_body, &options);
 
-        Ok((content_meta.into(), html))
+        let end = result.matter.len() + engine.delimiter().len() * 2;
+        let meta_span = 0..end;
+
+        let meta = ContentMeta::from_unresolved(MetaResolveContext {
+            source_code: &parse_ctx.source,
+            file_name: &parse_ctx.file_name,
+            meta_span,
+            unresolved: meta,
+        })?;
+
+        Ok(ContentPage {
+            html,
+            meta,
+            source: parse_ctx.source,
+        })
     }
 }
 
@@ -79,7 +124,7 @@ title: Example
 # My Title
         ";
 
-        let engine = detect_frontmatter_engine(content).unwrap();
+        let engine = detect_frontmatter_engine(&Arc::new(content.into())).unwrap();
         assert_eq!(engine, FrontmatterEngine::Yaml);
 
         let content = r#"+++
@@ -90,15 +135,15 @@ title = "Example"
 # My Title
         "#;
 
-        let engine = detect_frontmatter_engine(content).unwrap();
+        let engine = detect_frontmatter_engine(&Arc::new(content.into())).unwrap();
         assert_eq!(engine, FrontmatterEngine::Toml);
 
         let content = "
         # My Title
         ";
 
-        let engine = detect_frontmatter_engine(content).unwrap_err();
-        assert_eq!(engine, FrontmatterError::NoFrontmatter);
+        let result = detect_frontmatter_engine(&Arc::new(content.into()));
+        assert!(result.is_err());
     }
 
     #[test]
@@ -111,9 +156,13 @@ title: Example
 # My Title
         ";
 
-        let result = Markdown.parse(content).unwrap();
-        assert_eq!(result.0.title, "Example");
-        assert_eq!(result.1, "<h1>My Title</h1>\n");
+        let context = ParsePageCtx {
+            source: Arc::new(content.into()),
+            file_name: "index.md".into(),
+        };
+        let result = Markdown.parse(context).unwrap();
+        assert_eq!(result.meta.title, "Example");
+        assert_eq!(result.html, "<h1>My Title</h1>\n");
     }
 
     #[test]
@@ -126,8 +175,12 @@ title = "Example"
 # My Title
         "#;
 
-        let result = Markdown.parse(content).unwrap();
-        assert_eq!(result.0.title, "Example");
-        assert_eq!(result.1, "<h1>My Title</h1>\n");
+        let context = ParsePageCtx {
+            source: Arc::new(content.into()),
+            file_name: "index.md".into(),
+        };
+        let result = Markdown.parse(context).unwrap();
+        assert_eq!(result.meta.title, "Example");
+        assert_eq!(result.html, "<h1>My Title</h1>\n");
     }
 }

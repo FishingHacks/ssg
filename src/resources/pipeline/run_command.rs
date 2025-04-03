@@ -1,9 +1,7 @@
-use std::{
-    fmt::Write as _,
-    io::{Read, Write as _},
-    path::Path,
-    process::{Command, Stdio},
-};
+use std::fmt::Write as _;
+use std::io::{Read, Write as _};
+use std::path::Path;
+use std::process::{Command, Stdio};
 
 use serde::{Deserialize, Serialize};
 use tempfile::NamedTempFile;
