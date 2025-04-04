@@ -1,16 +1,12 @@
-[[resources.webp]]
-type = "none"
+[[pipelines.prebuild]]
+cmd = "touch"
+arguments = ["$rootdir/test1.txt"]
 
-[[resources.webp]]
-type = "none"
+[[pipelines.postbuild]]
+cmd = "touch"
+arguments = ["$rootdir/test1.txt"]
 
-[[resources.ts]]
-type = "none"
-
-[[resources.ts]]
-type = "run.command"
-command = "tsc"
-arguments = ["--root $rootdir", "a", "b"]
-new_extension = "js"
-output = "file"
-input = "stdin"
+[[pipeline.txt]]
+cmd = "cp"
+arguments = ["$infile", "$outfile"]
+new_extension = "md"

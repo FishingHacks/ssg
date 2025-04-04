@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::resources::{Pipeline, PipelineConfig};
+use crate::resources::{Pipeline, PipelineConfig, UnresolvedPipelineConfig};
 
 #[derive(Debug)]
 pub struct SiteConfig {
@@ -15,7 +15,6 @@ pub struct SiteConfig {
     pub out_dir: PathBuf,
     pub root_dir: PathBuf,
     pub index_page: String,
-    pub single_file_pipelines: HashMap<String, Pipeline>,
     pub pipeline_cfg: PipelineConfig,
 }
 
@@ -27,7 +26,7 @@ pub struct UnresolvedSiteConfig {
     out_dir: Option<PathBuf>,
     index_page: Option<String>,
     pipeline: Option<HashMap<String, Pipeline>>,
-    pipelines: Option<PipelineConfig>,
+    pipelines: Option<UnresolvedPipelineConfig>,
 }
 
 impl SiteConfig {
@@ -40,6 +39,10 @@ impl SiteConfig {
         let content_dir = resolve_path(&root_dir, unresolved.content_dir, Path::new("content"));
         let out_dir = resolve_path(&root_dir, unresolved.out_dir, Path::new("dist"));
         let index_page = unresolved.index_page.unwrap_or_else(|| "_index.md".into());
+        let pipeline_cfg = PipelineConfig::from_unresolved(
+            unresolved.pipelines.unwrap_or_default(),
+            unresolved.pipeline.unwrap_or_default(),
+        );
 
         Self {
             port,
@@ -49,8 +52,7 @@ impl SiteConfig {
             out_dir,
             index_page,
             root_dir,
-            single_file_pipelines: unresolved.pipeline.unwrap_or_default(),
-            pipeline_cfg: unresolved.pipelines.unwrap_or_default(),
+            pipeline_cfg,
         }
     }
 }

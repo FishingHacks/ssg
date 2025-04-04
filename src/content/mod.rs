@@ -13,6 +13,7 @@ use thiserror::Error;
 pub enum FileType {
     Markdown,
     Org,
+    // TODO: HTML, Asciidoc, reStructedText
 }
 
 impl From<Option<&OsStr>> for FileType {
