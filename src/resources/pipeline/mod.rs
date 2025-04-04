@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::path::PathBuf;
 use std::process::ExitStatus;
@@ -73,4 +74,27 @@ pipeline_struct! {
 #[serde(transparent)]
 pub struct Pipeline {
     entries: Vec<PipelineEntry>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PipelineCommand {
+    name: Option<String>,
+    command: String,
+    arguments: Vec<String>,
+}
+
+#[derive(Default, Debug, Serialize, Deserialize)]
+pub struct PipelineConfig {
+    #[serde(default = "Vec::new")]
+    pre_build: Vec<PipelineCommand>,
+    #[serde(default = "Vec::new")]
+    post_build: Vec<PipelineCommand>,
+    #[serde(default = "HashMap::new")]
+    /// Specifies the pipeline to run for an extension. By default, it's the pipeline with the same
+    /// name. Example: `{ "tsx": "pipeline.ts" }`
+    extension_map: HashMap<String, String>,
+    #[serde(default = "HashMap::new")]
+    /// Specifies the pipeline to run for special files.
+    /// Example: { "tailwind.scss": "pipeline.tailwind" }
+    special_files: HashMap<String, String>,
 }

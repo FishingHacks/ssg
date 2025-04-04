@@ -6,7 +6,7 @@ use std::process::{Command, Stdio};
 use serde::{Deserialize, Serialize};
 use tempfile::NamedTempFile;
 
-use super::{PipelineError, ResourcePipeline};
+use super::{PipelineCommand, PipelineError, ResourcePipeline};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -29,6 +29,7 @@ pub enum RunCommandInput {
 /// $outfile - if output = "file"
 /// $contentdir - content directory
 /// $templatedir - template directory
+/// $rootdir - root directory
 /// $distdir - build directory
 /// $outdir - build directory
 /// $$ - literal `$`
@@ -40,8 +41,8 @@ pub struct RunCommand {
     input: RunCommandInput,
     #[serde(default = "Default::default")]
     output: RunCommandOutput,
-    command: String,
-    arguments: Vec<String>,
+    #[serde(flatten)]
+    command: PipelineCommand,
 }
 
 impl ResourcePipeline for RunCommand {
