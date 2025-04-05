@@ -90,8 +90,8 @@ async fn build(config: SiteConfig) -> miette::Result<BuildStep, BuildError> {
     config.pipeline_cfg.run_pre_build_pipeline(&config).await?;
     let resources = config.pipeline_cfg.index_resources(&config);
 
-    // let templates = templates::load_templates(&config).await?;
-    // let pages = content::parse_content(&config).await?;
+    let templates = templates::load_templates(&config).await?;
+    let pages = content::parse_content(&config).await?;
 
     let resource_handles = futures::future::join_all(resources.iter().map(PathBuf::from).map(|path| {
         let config = config.clone();

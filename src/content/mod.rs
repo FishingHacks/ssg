@@ -9,7 +9,6 @@ use miette::{Diagnostic, NamedSource, SourceSpan};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::BuildStep;
 use crate::config::SiteConfig;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
