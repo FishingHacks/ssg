@@ -1,4 +1,16 @@
+use thiserror::Error;
+
 use super::ByteOffset;
+
+#[derive(Debug, Error)]
+pub enum LexingError {
+    #[error("{0:?}: String literal is unterminated")]
+    UnterminatedStringLiteral(ByteOffset),
+    #[error("{0:?}: Expected {1} but found {2}")]
+    UnexpectedCharacter(ByteOffset, char, char),
+    #[error("Expected {0} but found EOF")]
+    UnexpectedEOF(char),
+}
 
 pub struct Lexer<'lex> {
     cursor: usize,
@@ -12,9 +24,25 @@ pub enum Token {
     ExprStart(ByteOffset),
     ExprEnd(ByteOffset),
     Identifier(ByteOffset),
+    /// "afjkdgkjfg"
+    /// ~~~~~~~~~~~~ <- .0
     StringLiteral(ByteOffset),
     Keyword(ByteOffset),
     Symbol(char, ByteOffset),
+}
+
+impl Token {
+    pub fn loc(&self) -> ByteOffset {
+        match self {
+            Token::Html(byte_offset)
+            | Token::ExprStart(byte_offset)
+            | Token::ExprEnd(byte_offset)
+            | Token::Identifier(byte_offset)
+            | Token::StringLiteral(byte_offset)
+            | Token::Keyword(byte_offset)
+            | Token::Symbol(_, byte_offset) => *byte_offset,
+        }
+    }
 }
 
 impl<'lex> Lexer<'lex> {
@@ -44,6 +72,7 @@ impl<'lex> Lexer<'lex> {
         self.cursor += n;
     }
 
+    // Why not make this miette::Result<Token>?
     pub fn lex(mut self) -> miette::Result<Vec<Token>> {
         while self.cursor < self.source.len() {
             if self.starts_with("{{") {
@@ -104,20 +133,39 @@ impl<'lex> Lexer<'lex> {
                         self.tokens.push(Token::Identifier(span));
                     }
                 }
-                Some('.') => {
+                Some(c @ ('.' | '+' | '(' | ')' | ',')) => {
                     let start = self.cursor;
                     self.cursor += 1;
-                    self.tokens
-                        .push(Token::Symbol('.', ByteOffset::new(start, self.cursor)));
-                }
-                Some(' ') => self.bump(1),
-                Some(c) => {
-                    // here we hit an unknown symbol. Right now im just lexing it as a "symbol"
-                    // but we should probably error. idk
-                    let start = self.cursor;
-                    self.cursor += c.len_utf8();
                     self.tokens.push(Token::Symbol(c, ByteOffset::new(start, self.cursor)));
                 }
+                // NOTE: I am parsing these as keywords.. idk if this is sane or expected.. or if
+                // we should just merge keywords and symbols
+                Some(':') => {
+                    let start = self.cursor;
+                    self.bump(1);
+                    self.expect('=')?;
+                    self.tokens.push(Token::Keyword(ByteOffset::new(start, self.cursor)));
+                }
+                Some('=') => {
+                    let start = self.cursor;
+                    self.bump(1);
+                    self.expect('=')?;
+                    self.tokens.push(Token::Keyword(ByteOffset::new(start, self.cursor)));
+                }
+                Some('!') => {
+                    let start = self.cursor;
+                    self.bump(1);
+                    self.expect('=')?;
+                    self.tokens.push(Token::Keyword(ByteOffset::new(start, self.cursor)));
+                }
+                Some('?') => {
+                    let start = self.cursor;
+                    self.bump(1);
+                    self.expect('?')?;
+                    self.tokens.push(Token::Keyword(ByteOffset::new(start, self.cursor)));
+                }
+                Some(' ') => self.bump(1),
+                Some(c) => return Err(miette::miette!("Unexpected character `{c}`")),
                 None => panic!("Unclosed script block (missing '}}')"),
             }
         }
@@ -140,8 +188,8 @@ impl<'lex> Lexer<'lex> {
     }
 
     fn lex_string_literal(&mut self) -> miette::Result<ByteOffset> {
-        self.expect('"')?;
         let start = self.cursor;
+        self.expect('"')?;
 
         while let Some(c) = self.next() {
             if c == '"' {
@@ -173,7 +221,7 @@ impl<'lex> Lexer<'lex> {
     fn is_keyword(&self, ident: &str) -> bool {
         matches!(
             ident,
-            "for" | "end" | "block" | "if" | "page" | "resources" | "site" | "render" | "extend"
+            "for" | "in" | "end" | "if" | "else" | "block" | "enter" | "render" | "slot" | "extend"
         )
     }
 }

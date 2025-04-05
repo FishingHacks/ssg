@@ -45,7 +45,7 @@ pub async fn load_templates(config: &SiteConfig) -> Result<HashMap<PathBuf, Page
             let path = entry.into_path().resolve(&config.root_dir);
             tokio::spawn(async move {
                 let content = tokio::fs::read_to_string(&path).await?;
-                // TODO: unwrap is forbidden but... hear me out
+                // TODO: unwrap is forbidden but... hear me out <- ur scared of error handling?
                 let ast = scripting::parse_template(content).unwrap();
                 Result::<_, TemplateError>::Ok(PageTemplate { ast, path })
             })
