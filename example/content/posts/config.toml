@@ -1,3 +1,0 @@
-page_template = "_post.html" # default: "_basic.html"
-entry_template = "_list.html" # this is the default value lol
-index_page = "_index.md" # default: see config.toml in the root directory

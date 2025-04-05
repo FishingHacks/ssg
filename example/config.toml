@@ -1,39 +1,26 @@
-output = "dist/"
-err_page = "_404.md" # default: "_404.md"
-index_page = "_index.md" # default: "_index.md"
-basic_page = "https://wiru.st/"
+[[pipeline.txt]]
+cmd = "cp"
+arguments = ["$infile", "$outfile"]
+new_extension = "md"
 
-[[resources.scss]]
-type = "run.command"
-command = "scss_css_transpiler"
-output = "stdout" # default : "file" | valid values: "file" | "stdout" | "stderr"
-arguments = "-O3 --file=$input" # $input gets replaced with the input file. To get a literal dollar sign, use `$$`, e.g. `"$$input=meow"` adds an argument matching "$input=meow"
+[[pipeline.weird_css]]
+cmd = "cp"
+arguments = ["$infile", "$outfile"]
+new_extension = "weird_css"
 
-[[resources.scss]]
-type = "css.minify"
+[[pipeline.tailwind]]
+cmd = "cp"
+arguments = ["$infile", "$outfile"]
+new_extension = "tailwind"
 
-[[resources.ts]]
-type = "run.command"
-command = "typescript"
-output = "file"
-# default: ""
-argument = "-O3 --input=$input --output=$output" # when the output is set to `file`, another variable called `$output` is added.
+[pipelines]
+extension_map = { css = "weird_css" }
+special_files = { "tailwind.css" = "tailwind" }
 
-[[resources.ts]]
-type = "js.minify"
+[[pipelines.pre_build]]
+cmd = "touch"
+arguments = ["$distdir/pre_build_ran"]
 
-[[resources.png]]
-type = "webp.from_png"
-result = "webp"
-
-[[resources.png]]
-type = "run.pipeline"
-pipeline = "resources.webp"
-
-[[resources.webp]]
-type = "change_filename"
-expression = "'img_$filename'"
-
-[default_keys]
-name = "wiru"
-email = "dev.willians.faria@gmail.com"
+[[pipelines.post_build]]
+cmd = "touch"
+arguments = ["$distdir/post_build_ran"]

@@ -19,10 +19,6 @@ impl ByteOffset {
     pub fn range(self) -> Range<usize> {
         self.start..self.end
     }
-
-    pub fn merge(self, other: Self) -> Self {
-        self + other
-    }
 }
 
 impl Add for ByteOffset {

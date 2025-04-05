@@ -1,9 +1,7 @@
 ---
-author: 4wiru
+title: Home
+draft: false
+date: 01-01-1999 00:00:00
 ---
 
-# ![user profile picture](/user_profile.png) Wiru
-
-Welcome to my website :3
-
-[Posts](./posts) | [GitHub](https://github.com/wllfaria) | [Email](mailto:{{email}})
+[About Me :3](./about)

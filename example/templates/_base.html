@@ -1,13 +1,11 @@
-<!-- the thing all other templates depend on -->
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>{{ "" if site.is_home else '$title - ' }}{{ user }}'s blog</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="<% resource_link('scss/index.scss') %>">
-        {{ block "head" }}
-    </head>
-    <body>
-        {{ block "main" }}
-    </body>
-</html>
+<head>
+    {{if author}}
+    <title>{{ title }} - {{ author }}</title>
+    {{else}}
+    <title>{{ title }}</title>
+    {{end}}
+</head>
+<body>
+    {{ block "main" }}
+</body>

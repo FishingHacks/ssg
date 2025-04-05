@@ -86,6 +86,8 @@ async fn main() -> miette::Result<()> {
 async fn build(config: SiteConfig) -> miette::Result<BuildStep, BuildError> {
     let config = Arc::new(config);
     let mut build_step = BuildStep::default();
+    // ensure output dir exists
+    std::fs::create_dir_all(&config.out_dir)?;
 
     config.pipeline_cfg.run_pre_build_pipeline(&config).await?;
     let resources = config.pipeline_cfg.index_resources(&config);
