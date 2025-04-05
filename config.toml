@@ -1,12 +1,12 @@
-[[pipelines.prebuild]]
-cmd = "touch"
-arguments = ["$rootdir/test1.txt"]
-
-[[pipelines.postbuild]]
-cmd = "touch"
-arguments = ["$rootdir/test1.txt"]
-
-[[pipeline.txt]]
-cmd = "cp"
-arguments = ["$infile", "$outfile"]
-new_extension = "md"
+# [[pipelines.pre_build]]
+# cmd = "touch"
+# arguments = ["$rootdir/test1.txt"]
+# 
+# [[pipelines.post_build]]
+# cmd = "touch"
+# arguments = ["$rootdir/test2.txt"]
+# 
+# [[pipeline.txt]]
+# cmd = "cp"
+# arguments = ["$infile", "$outfile"]
+# new_extension = "md"

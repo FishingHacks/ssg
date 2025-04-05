@@ -119,7 +119,7 @@ impl PipelineConfig {
 }
 
 impl Pipeline {
-    pub fn run_pipeline(
+    pub async fn run_pipeline(
         &self,
         path: PathBuf,
         name: &str,
@@ -127,10 +127,14 @@ impl Pipeline {
     ) -> Result<PathBuf, ContextPipelineError> {
         assert!(path.is_relative());
         let mut outpath = config.out_dir.join(&path);
+        match tokio::fs::create_dir_all(outpath.parent().expect("outpath has to have a parent directory")).await {
+            Ok(_) => {}
+            Err(e) => return Err(ContextPipelineError::new(name, Some(path), 0, e)),
+        }
         let inpath = config.root_dir.join(&path);
         if self.entries.is_empty() {
             println!("Running pipeline {name} for {} (Step 0/0)", path.display());
-            return match std::fs::copy(&inpath, &outpath) {
+            return match tokio::fs::copy(&inpath, &outpath).await {
                 Ok(_) => Ok(outpath),
                 Err(e) => Err(ContextPipelineError::new(name, Some(path), 0, e)),
             };
@@ -147,21 +151,25 @@ impl Pipeline {
 
         let entries = self.entries.len();
         for (idx, entry) in self.entries.iter().enumerate() {
-            println!("Running pipeline {name} for {} (Step {idx}/{entries})", path.display(),);
+            println!(
+                "Running pipeline {name} for {} (Step {}/{entries})",
+                idx + 1,
+                path.display()
+            );
             // make the previous outfile this infile and create a new outfile
             infile = outfile;
             let input = if idx == 0 { &inpath } else { infile.path() };
 
             // last iteration
             if idx == entries - 1 {
-                if let Err(e) = entry.run(input, &outpath, config) {
+                if let Err(e) = entry.run(input, &outpath, config).await {
                     return Err(ContextPipelineError::new(name, Some(path), idx, e));
                 }
                 break;
             }
             outfile = NamedTempFile::new().expect("failed to create a tempfile");
 
-            if let Err(e) = entry.run(input, outfile.path(), config) {
+            if let Err(e) = entry.run(input, outfile.path(), config).await {
                 return Err(ContextPipelineError::new(name, Some(path), idx, e));
             }
         }
@@ -220,15 +228,15 @@ impl PipelineConfig {
         Some(pipeline.strip_prefix("pipeline.").unwrap_or(extension))
     }
 
-    pub fn run_pre_build_pipeline(&self, config: &SiteConfig) -> Result<(), ContextPipelineError> {
-        run_commands_pipeline(config, &self.pre_build, "pre-build")
+    pub async fn run_pre_build_pipeline(&self, config: &SiteConfig) -> Result<(), ContextPipelineError> {
+        run_commands_pipeline(config, &self.pre_build, "pre-build").await
     }
 
-    pub fn run_post_build_pipeline(&self, config: &SiteConfig) -> Result<(), ContextPipelineError> {
-        run_commands_pipeline(config, &self.post_build, "post-build")
+    pub async fn run_post_build_pipeline(&self, config: &SiteConfig) -> Result<(), ContextPipelineError> {
+        run_commands_pipeline(config, &self.post_build, "post-build").await
     }
 
-    pub fn run_pipeline_for_file(&self, path: PathBuf, config: &SiteConfig) -> Result<(), ContextPipelineError> {
+    pub async fn run_pipeline_for_file(&self, path: PathBuf, config: &SiteConfig) -> Result<(), ContextPipelineError> {
         let Some(pipeline) = self.pipeline_for_file(&path) else {
             println!("Warning: no pipeline registered for file {}", path.display());
             return Ok(());
@@ -237,7 +245,7 @@ impl PipelineConfig {
             println!("Warning: no pipeline registered for file {}", path.display());
             return Ok(());
         };
-        pipeline.run_pipeline(path, name, config)?;
+        pipeline.run_pipeline(path, name, config).await?;
         Ok(())
     }
 

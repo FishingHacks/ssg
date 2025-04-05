@@ -1,3 +1,3 @@
 mod pipeline;
 
-pub use pipeline::{Pipeline, PipelineConfig, UnresolvedPipelineConfig};
+pub use pipeline::{ContextPipelineError, Pipeline, PipelineConfig, UnresolvedPipelineConfig};

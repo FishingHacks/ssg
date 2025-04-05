@@ -1,9 +1,10 @@
 use std::fmt::Write as _;
-use std::io::Write as _;
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 use serde::{Deserialize, Serialize};
+use tokio::io::AsyncWriteExt;
+use tokio::process::Command;
 
 use super::{ContextPipelineError, PipelineCommand, PipelineError};
 use crate::config::SiteConfig;
@@ -11,16 +12,16 @@ use crate::config::SiteConfig;
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum RunCommandOutput {
-    File,
     #[default]
+    File,
     Stdout,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum RunCommandInput {
-    File,
     #[default]
+    File,
     Stdin,
 }
 
@@ -34,7 +35,7 @@ pub enum RunCommandInput {
 // $outdir - build directory
 // $$ - literal `$`
 
-pub fn run_commands_pipeline(
+pub async fn run_commands_pipeline(
     config: &SiteConfig,
     pipeline: &[PipelineCommand],
     name: &str,
@@ -48,7 +49,8 @@ pub fn run_commands_pipeline(
         rootdir: &config.root_dir,
     };
     for (i, entry) in pipeline.iter().enumerate() {
-        if let Err(e) = run_cmd(entry, vars, &[]) {
+        println!("Running {name} pipeline (Step {}/{})", i + 1, pipeline.len());
+        if let Err(e) = run_cmd(entry, vars, &[]).await {
             return Err(ContextPipelineError::new(name, None, i, e));
         }
     }
@@ -74,7 +76,12 @@ impl RunCommand {
         input
     }
 
-    pub fn run(&self, input: &Path, output: &Path, config: &crate::config::SiteConfig) -> Result<(), PipelineError> {
+    pub async fn run(
+        &self,
+        input: &Path,
+        output: &Path,
+        config: &crate::config::SiteConfig,
+    ) -> Result<(), PipelineError> {
         let vars = Vars {
             infile: Some(input),
             outfile: Some(output),
@@ -84,26 +91,29 @@ impl RunCommand {
             rootdir: &config.root_dir,
         };
 
-        let input = if let RunCommandInput::Stdin = self.input { std::fs::read(input)? } else { const { Vec::new() } };
-        let stdout = run_cmd(&self.command, vars, &input)?;
+        let input =
+            if let RunCommandInput::Stdin = self.input { tokio::fs::read(input).await? } else { const { Vec::new() } };
+        let stdout = run_cmd(&self.command, vars, &input).await?;
         if let RunCommandOutput::Stdout = self.output {
-            std::fs::write(output, stdout)?
+            tokio::fs::write(output, stdout).await?
         }
         Ok(())
     }
 }
 
-pub fn run_cmd(command: &PipelineCommand, vars: Vars, input: &[u8]) -> Result<Vec<u8>, PipelineError> {
+async fn run_cmd(command: &PipelineCommand, vars: Vars<'_>, input: &[u8]) -> Result<Vec<u8>, PipelineError> {
     let mut cmd = Command::new(&command.cmd);
     cmd.args(command.arguments.iter().map(move |v| replace_vars(v, vars)));
     cmd.stdin(Stdio::piped());
     cmd.stdout(Stdio::piped());
     cmd.stderr(Stdio::piped());
     let mut child = cmd.spawn()?;
-    if let Some(stdin) = child.stdin.as_mut() {
-        stdin.write_all(input)?;
+    if !input.is_empty() {
+        if let Some(stdin) = child.stdin.as_mut() {
+            stdin.write_all(input).await?;
+        }
     }
-    let output = child.wait_with_output()?;
+    let output = child.wait_with_output().await?;
     if output.status.success() {
         Ok(output.stdout)
     } else {
@@ -133,6 +143,7 @@ fn replace_vars(input: &str, vars: Vars) -> String {
         let Some(c) = input[current_idx..].chars().next() else { break };
         if is_var {
             if !c.is_ascii_alphabetic() {
+                is_var = false;
                 let default = &input[start_idx..current_idx];
                 let value = match &input[start_idx + '$'.len_utf8()..current_idx] {
                     "infile" => vars.infile,
@@ -151,6 +162,7 @@ fn replace_vars(input: &str, vars: Vars) -> String {
                 output
                     .write_fmt(format_args!("{}", v.display()))
                     .expect("writing to a string should never fail");
+                continue;
             }
         } else if c == '$' {
             if let Some('$') = input[current_idx + c.len_utf8()..].chars().next() {

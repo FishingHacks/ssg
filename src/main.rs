@@ -11,7 +11,8 @@ use std::sync::Arc;
 use clap::{Parser, Subcommand};
 use config::{ConfigReadError, SiteConfig};
 use content::ContentParseError;
-use miette::Diagnostic;
+use miette::{Diagnostic, miette};
+use resources::ContextPipelineError;
 use templates::TemplateError;
 use thiserror::Error;
 
@@ -61,6 +62,9 @@ enum BuildError {
 
     #[error("Task join error: {0}")]
     Join(#[from] tokio::task::JoinError),
+
+    #[error(transparent)]
+    Pipeline(#[from] ContextPipelineError),
 }
 
 #[tokio::main]
@@ -80,10 +84,29 @@ async fn main() -> miette::Result<()> {
 }
 
 async fn build(config: SiteConfig) -> miette::Result<BuildStep, BuildError> {
+    let config = Arc::new(config);
     let mut build_step = BuildStep::default();
 
-    let templates = templates::load_templates(&config).await?;
-    let pages = content::parse_content(&config).await?;
+    config.pipeline_cfg.run_pre_build_pipeline(&config).await?;
+    let resources = config.pipeline_cfg.index_resources(&config);
+
+    // let templates = templates::load_templates(&config).await?;
+    // let pages = content::parse_content(&config).await?;
+
+    let resource_handles = futures::future::join_all(resources.iter().map(PathBuf::from).map(|path| {
+        let config = config.clone();
+        tokio::spawn(async move {
+            let config = config;
+            config.pipeline_cfg.run_pipeline_for_file(path, &config).await
+        })
+    }))
+    .await;
+
+    for handle in resource_handles {
+        handle??;
+    }
+
+    config.pipeline_cfg.run_post_build_pipeline(&config).await?;
 
     Ok(build_step)
 }
