@@ -1,6 +1,8 @@
 mod config;
 mod content;
 mod resources;
+mod scripting;
+mod templates;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -8,8 +10,9 @@ use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 use config::{ConfigReadError, SiteConfig};
-use content::{ContentParseError, ContentParser, FileType, ParsePageCtx, parser_from_filetype};
+use content::ContentParseError;
 use miette::Diagnostic;
+use templates::TemplateError;
 use thiserror::Error;
 
 static DEFAULT_PORT: u16 = 8000;
@@ -50,6 +53,10 @@ enum BuildError {
     ContentParse(#[from] ContentParseError),
 
     #[error(transparent)]
+    #[diagnostic(transparent)]
+    TemplateError(#[from] TemplateError),
+
+    #[error(transparent)]
     IO(#[from] std::io::Error),
 
     #[error("Task join error: {0}")]
@@ -73,52 +80,10 @@ async fn main() -> miette::Result<()> {
 }
 
 async fn build(config: SiteConfig) -> miette::Result<BuildStep, BuildError> {
-    std::fs::create_dir_all(&config.out_dir)?;
     let mut build_step = BuildStep::default();
 
-    let content_dir = &config.content_dir;
-    if content_dir.exists() {
-        let entries: Vec<_> = walkdir::WalkDir::new(content_dir)
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .collect();
-
-        let mut handles = vec![];
-        for entry in entries {
-            let path = entry.path().to_path_buf();
-            let file_name = path.file_name().unwrap().to_string_lossy().to_string();
-
-            if path.is_dir() {
-                continue;
-            }
-
-            let filetype = FileType::from(path.extension());
-            let content = Arc::new(tokio::fs::read_to_string(&path).await?);
-            build_step.contents.insert(path, content.clone());
-
-            let handle = tokio::spawn(async move {
-                match filetype {
-                    FileType::Markdown => {
-                        let parser = parser_from_filetype(FileType::Markdown);
-                        let page = parser.parse(ParsePageCtx {
-                            source: content.clone(),
-                            file_name,
-                        })?;
-                        println!("{page:?}");
-                        // TODO: actually do something here lol
-                    }
-                    _ => todo!(),
-                }
-                Ok::<_, BuildError>(())
-            });
-
-            handles.push(handle);
-        }
-
-        for handle in handles {
-            handle.await??;
-        }
-    }
+    let templates = templates::load_templates(&config).await?;
+    let pages = content::parse_content(&config).await?;
 
     Ok(build_step)
 }

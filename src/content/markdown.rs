@@ -86,11 +86,9 @@ impl ContentParser for Markdown {
             .deserialize::<UnresolvedContentMeta>()
             .expect("encountered valid toml that wasn't supported by ContentMeta.");
 
-        let content_body = result.content;
-
         let mut options = ComrakOptions::default();
         options.render.unsafe_ = true;
-        let html = markdown_to_html(&content_body, &options);
+        let html = markdown_to_html(&result.content, &options);
 
         let end = result.matter.len() + engine.delimiter().len() * 2;
         let meta_span = 0..end;

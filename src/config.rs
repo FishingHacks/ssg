@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use path_absolutize::Absolutize;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -35,9 +36,17 @@ impl SiteConfig {
             Some(dirs) => dirs.into_iter().map(|v| root_dir.join(v)).collect(),
             None => vec![root_dir.join("resources")],
         };
-        let templates_dir = resolve_path(&root_dir, unresolved.templates_dir, Path::new("templates"));
-        let content_dir = resolve_path(&root_dir, unresolved.content_dir, Path::new("content"));
-        let out_dir = resolve_path(&root_dir, unresolved.out_dir, Path::new("dist"));
+
+        let templates_dir = unresolved
+            .templates_dir
+            .resolve_with_default(&root_dir, Path::new("templates"));
+
+        let content_dir = unresolved
+            .content_dir
+            .resolve_with_default(&root_dir, Path::new("content"));
+
+        let out_dir = unresolved.out_dir.resolve_with_default(&root_dir, Path::new("dist"));
+
         let index_page = unresolved.index_page.unwrap_or_else(|| "_index.md".into());
         let pipeline_cfg = PipelineConfig::from_unresolved(
             unresolved.pipelines.unwrap_or_default(),
@@ -45,15 +54,58 @@ impl SiteConfig {
         );
 
         Self {
+            root_dir,
             port,
             resources_dirs,
             templates_dir,
             content_dir,
             out_dir,
             index_page,
-            root_dir,
             pipeline_cfg,
         }
+    }
+}
+
+pub trait ResolvePath {
+    fn resolve_with_default<T: AsRef<Path>, U: AsRef<Path>>(self, base_dir: T, default: U) -> PathBuf;
+    fn resolve<T: AsRef<Path>>(self, base_dir: T) -> PathBuf;
+}
+
+impl<T: AsRef<Path>> ResolvePath for Option<T> {
+    fn resolve_with_default<P: AsRef<Path>, U: AsRef<Path>>(self, base_dir: P, default: U) -> PathBuf {
+        let Some(path) = self else { return base_dir.as_ref().join(default) };
+
+        if !path.as_ref().exists() {
+            return base_dir.as_ref().join(default);
+        }
+
+        base_dir.as_ref().join(path)
+    }
+
+    fn resolve<P: AsRef<Path>>(self, base_dir: P) -> PathBuf {
+        let Some(path) = self else { return base_dir.as_ref().to_path_buf() };
+
+        if !path.as_ref().exists() {
+            return base_dir.as_ref().to_path_buf();
+        }
+
+        base_dir.as_ref().join(path)
+    }
+}
+
+impl<T: AsRef<Path>> ResolvePath for &T {
+    fn resolve_with_default<P: AsRef<Path>, U: AsRef<Path>>(self, base_dir: P, default: U) -> PathBuf {
+        if !self.as_ref().exists() {
+            return base_dir.as_ref().join(default);
+        }
+        base_dir.as_ref().join(self)
+    }
+
+    fn resolve<P: AsRef<Path>>(self, base_dir: P) -> PathBuf {
+        if !self.as_ref().exists() {
+            return base_dir.as_ref().to_path_buf();
+        }
+        base_dir.as_ref().join(self)
     }
 }
 
@@ -65,15 +117,9 @@ pub enum ConfigReadError {
     IO(#[from] std::io::Error),
 }
 
-fn resolve_path(root_dir: &Path, path: Option<PathBuf>, default: &'static Path) -> PathBuf {
-    let Some(path) = path else { return root_dir.join(default) };
-    // this sucks, but i would like to have absolute paths
-    root_dir.join(path)
-}
-
 pub fn load(root_dir: Option<PathBuf>, port: u16) -> Result<SiteConfig, ConfigReadError> {
     let root_dir = match root_dir {
-        Some(v) => v,
+        Some(v) => v.absolutize()?.to_path_buf(),
         None => std::env::current_dir()?,
     };
 

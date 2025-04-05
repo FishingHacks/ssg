@@ -9,6 +9,9 @@ use miette::{Diagnostic, NamedSource, SourceSpan};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::BuildStep;
+use crate::config::SiteConfig;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum FileType {
     Markdown,
@@ -78,6 +81,15 @@ pub enum ContentParseError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     InvalidMetadata(#[from] InvalidMetadata),
+
+    #[error(transparent)]
+    IO(#[from] std::io::Error),
+
+    #[error("Task join error: {0}")]
+    Join(#[from] tokio::task::JoinError),
+
+    #[error("No content found")]
+    NoContent,
 }
 
 pub struct MetaResolveContext<'ctx, S>
@@ -221,4 +233,36 @@ pub fn parser_from_filetype(filetype: FileType) -> ParserImpl {
         FileType::Markdown => ParserImpl::Markdown(markdown::Markdown),
         FileType::Org => todo!(),
     }
+}
+
+pub async fn parse_content(config: &SiteConfig) -> miette::Result<Vec<ContentPage>, ContentParseError> {
+    if !config.content_dir.exists() {
+        return Err(ContentParseError::NoContent);
+    }
+
+    let handles = walkdir::WalkDir::new(&config.content_dir)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_type().is_file())
+        .map(|entry| {
+            let path = entry.path().to_path_buf();
+            let file_name = path.file_name().unwrap().to_string_lossy().to_string();
+
+            tokio::spawn(async move {
+                let content = Arc::new(tokio::fs::read_to_string(&path).await?);
+                let parser = parser_from_filetype(FileType::from(path.extension()));
+
+                parser.parse(ParsePageCtx {
+                    source: content,
+                    file_name,
+                })
+            })
+        });
+
+    let pages = futures::future::try_join_all(handles)
+        .await?
+        .into_iter()
+        .collect::<Result<_, _>>()?;
+
+    Ok(pages)
 }
