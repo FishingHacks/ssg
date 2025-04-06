@@ -1,11 +1,25 @@
 <!DOCTYPE html>
-<head>
-    {{if author}}
-    <title>{{ title }} - {{ author }}</title>
-    {{else}}
-    <title>{{ title }}</title>
-    {{end}}
-</head>
-<body>
-    {{ block "main" }}
-</body>
+<html lang="en">
+    <head id="head">
+        <meta charset="UTF-8">
+
+        <meta name="description" content="{{ page.description }}">
+
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        {{ if page.author }}
+        <title>{{ page.title }} - {{ page.author }}</title>
+        {{ else }}
+        <title>{{ page.title }}</title>
+        {{ end }}
+
+        {{ slot "head" }}
+    </head>
+
+    <body>
+        <main>
+            {{ slot "page" }}
+        </main>
+    </body>
+</html>

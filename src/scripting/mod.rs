@@ -1,6 +1,10 @@
 use std::ops::{Add, AddAssign, Range};
+use std::sync::Arc;
 
-use lexer::{Lexer, Token};
+use lexer::{Lexer, LexingError, Token};
+use miette::Diagnostic;
+use parser::ParsingError;
+use thiserror::Error;
 
 mod lexer;
 mod parser;
@@ -46,7 +50,7 @@ impl From<(usize, usize)> for ByteOffset {
 
 #[derive(Debug)]
 pub struct Ast {
-    source: String,
+    source: Arc<String>,
     nodes: Vec<AstNode>,
 }
 
@@ -147,15 +151,30 @@ impl Expr {
     }
 }
 
-pub fn parse_template(template: String) -> miette::Result<Ast> {
+#[derive(Debug, Error, Diagnostic)]
+pub enum MyError {
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    LexingError(#[from] LexingError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    ParsingError(#[from] ParsingError),
+}
+
+pub fn parse_template(template: String) -> Result<Ast, MyError> {
     let mut ast = Ast {
-        source: template,
+        source: Arc::new(template),
         nodes: vec![],
     };
 
-    let tokens = Lexer::new(&ast.source).lex()?;
+    let mut tokens = vec![];
+    let lexer = Lexer::new(ast.source.clone());
+    for token in lexer {
+        tokens.push(token?);
+    }
     let mut parser = parser::Parser::new(&mut ast, &tokens);
-    parser.parse_all().map_err(|v| miette::miette!("{v}"))?;
+    parser.parse_all()?;
 
     Ok(ast)
 }
@@ -170,7 +189,10 @@ pub fn print_token(src: &str, tok: &Token) {
             println!("StringLit({:?})", &src[byte_offset.start + 1..byte_offset.end - 1])
         }
         Token::Keyword(byte_offset) => println!("Keyword({})", &src[byte_offset.range()]),
+        Token::Float(byte_offset) => println!("Float({})", &src[byte_offset.range()]),
+        Token::Int(byte_offset) => println!("Int({})", &src[byte_offset.range()]),
         Token::Symbol(c, _) => println!("Symbol({c:?})"),
+        Token::Dot(_) => println!("Dot('.')"),
     }
 }
 

@@ -1,0 +1,2057 @@
+---
+source: src/scripting/lexer.rs
+expression: tokens
+---
+[
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 0,
+                end: 2,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 3,
+                end: 5,
+            },
+        ),
+        content: "if",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 6,
+                end: 10,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 10,
+                end: 11,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 11,
+                end: 17,
+            },
+        ),
+        content: "author",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 18,
+                end: 20,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 20,
+                end: 28,
+            },
+        ),
+        content: "\n<title>",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 28,
+                end: 30,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 31,
+                end: 35,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 35,
+                end: 36,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 36,
+                end: 41,
+            },
+        ),
+        content: "title",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 42,
+                end: 44,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 44,
+                end: 47,
+            },
+        ),
+        content: " - ",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 47,
+                end: 49,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 50,
+                end: 54,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 54,
+                end: 55,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 55,
+                end: 61,
+            },
+        ),
+        content: "author",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 62,
+                end: 64,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 64,
+                end: 73,
+            },
+        ),
+        content: "</title>\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 73,
+                end: 75,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 76,
+                end: 80,
+            },
+        ),
+        content: "else",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 81,
+                end: 83,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 83,
+                end: 91,
+            },
+        ),
+        content: "\n<title>",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 91,
+                end: 93,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 94,
+                end: 98,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 98,
+                end: 99,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 99,
+                end: 104,
+            },
+        ),
+        content: "title",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 105,
+                end: 107,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 107,
+                end: 116,
+            },
+        ),
+        content: "</title>\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 116,
+                end: 118,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 119,
+                end: 122,
+            },
+        ),
+        content: "end",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 123,
+                end: 125,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 125,
+                end: 127,
+            },
+        ),
+        content: "\n\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 127,
+                end: 129,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 130,
+                end: 133,
+            },
+        ),
+        content: "for",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 134,
+                end: 137,
+            },
+        ),
+        content: "tag",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 138,
+                end: 140,
+            },
+        ),
+        content: "in",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 141,
+                end: 145,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 145,
+                end: 146,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 146,
+                end: 150,
+            },
+        ),
+        content: "tags",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 151,
+                end: 153,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 153,
+                end: 160,
+            },
+        ),
+        content: "\n<span>",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 160,
+                end: 162,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 163,
+                end: 166,
+            },
+        ),
+        content: "tag",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 166,
+                end: 167,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 167,
+                end: 171,
+            },
+        ),
+        content: "name",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 172,
+                end: 174,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 174,
+                end: 182,
+            },
+        ),
+        content: "</span>\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 182,
+                end: 184,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 185,
+                end: 188,
+            },
+        ),
+        content: "end",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 189,
+                end: 191,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 191,
+                end: 193,
+            },
+        ),
+        content: "\n\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 193,
+                end: 195,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 196,
+                end: 200,
+            },
+        ),
+        content: "slot",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 202,
+                end: 206,
+            },
+        ),
+        content: "head",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 208,
+                end: 210,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 210,
+                end: 211,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 211,
+                end: 213,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 214,
+                end: 218,
+            },
+        ),
+        content: "slot",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 220,
+                end: 224,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 226,
+                end: 228,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 228,
+                end: 230,
+            },
+        ),
+        content: "\n\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 230,
+                end: 232,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 233,
+                end: 238,
+            },
+        ),
+        content: "block",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 240,
+                end: 244,
+            },
+        ),
+        content: "head",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 246,
+                end: 248,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 248,
+                end: 249,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 249,
+                end: 251,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 252,
+                end: 257,
+            },
+        ),
+        content: "block",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 259,
+                end: 263,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 265,
+                end: 267,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 267,
+                end: 268,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 268,
+                end: 270,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 271,
+                end: 277,
+            },
+        ),
+        content: "render",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 279,
+                end: 293,
+            },
+        ),
+        content: "something.html",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 295,
+                end: 297,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 297,
+                end: 298,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 298,
+                end: 300,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 301,
+                end: 307,
+            },
+        ),
+        content: "render",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 309,
+                end: 327,
+            },
+        ),
+        content: "another_thing.html",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 329,
+                end: 331,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 331,
+                end: 332,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 332,
+                end: 334,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 335,
+                end: 341,
+            },
+        ),
+        content: "extend",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 343,
+                end: 356,
+            },
+        ),
+        content: "template.html",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 358,
+                end: 360,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 360,
+                end: 361,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 361,
+                end: 363,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 364,
+                end: 368,
+            },
+        ),
+        content: "site",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 368,
+                end: 369,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 369,
+                end: 375,
+            },
+        ),
+        content: "assets",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 375,
+                end: 376,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 376,
+                end: 379,
+            },
+        ),
+        content: "get",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '(',
+            ByteOffset {
+                start: 379,
+                end: 380,
+            },
+        ),
+        content: "(",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 381,
+                end: 401,
+            },
+        ),
+        content: "asset_name.extension",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            ')',
+            ByteOffset {
+                start: 402,
+                end: 403,
+            },
+        ),
+        content: ")",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 404,
+                end: 406,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 406,
+                end: 407,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 407,
+                end: 409,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 410,
+                end: 414,
+            },
+        ),
+        content: "name",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 415,
+                end: 417,
+            },
+        ),
+        content: ":=",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 418,
+                end: 422,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 422,
+                end: 423,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 423,
+                end: 428,
+            },
+        ),
+        content: "title",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 429,
+                end: 431,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 431,
+                end: 432,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 432,
+                end: 434,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 435,
+                end: 439,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 439,
+                end: 440,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 440,
+                end: 445,
+            },
+        ),
+        content: "title",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 446,
+                end: 448,
+            },
+        ),
+        content: "==",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 450,
+                end: 460,
+            },
+        ),
+        content: "some title",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 462,
+                end: 464,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 464,
+                end: 465,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 465,
+                end: 467,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 468,
+                end: 472,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 472,
+                end: 473,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 473,
+                end: 478,
+            },
+        ),
+        content: "title",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 479,
+                end: 481,
+            },
+        ),
+        content: "!=",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 483,
+                end: 493,
+            },
+        ),
+        content: "some title",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 495,
+                end: 497,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 497,
+                end: 498,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 498,
+                end: 500,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 501,
+                end: 505,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 505,
+                end: 506,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 506,
+                end: 511,
+            },
+        ),
+        content: "words",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '>',
+            ByteOffset {
+                start: 512,
+                end: 513,
+            },
+        ),
+        content: ">",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 514,
+                end: 518,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 519,
+                end: 521,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 521,
+                end: 522,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 522,
+                end: 524,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 525,
+                end: 529,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 529,
+                end: 530,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 530,
+                end: 535,
+            },
+        ),
+        content: "words",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 536,
+                end: 538,
+            },
+        ),
+        content: ">=",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 539,
+                end: 543,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 544,
+                end: 546,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 546,
+                end: 547,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 547,
+                end: 549,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 550,
+                end: 554,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 554,
+                end: 555,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 555,
+                end: 560,
+            },
+        ),
+        content: "words",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '<',
+            ByteOffset {
+                start: 561,
+                end: 562,
+            },
+        ),
+        content: "<",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 563,
+                end: 567,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 568,
+                end: 570,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 570,
+                end: 571,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 571,
+                end: 573,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 574,
+                end: 578,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 578,
+                end: 579,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 579,
+                end: 584,
+            },
+        ),
+        content: "words",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 585,
+                end: 587,
+            },
+        ),
+        content: "<=",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 588,
+                end: 592,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 593,
+                end: 595,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 595,
+                end: 596,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 596,
+                end: 598,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 599,
+                end: 603,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 603,
+                end: 604,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 604,
+                end: 609,
+            },
+        ),
+        content: "words",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 610,
+                end: 612,
+            },
+        ),
+        content: "!=",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 613,
+                end: 617,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 618,
+                end: 620,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 620,
+                end: 621,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 621,
+                end: 623,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 624,
+                end: 628,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 629,
+                end: 631,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 631,
+                end: 632,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 632,
+                end: 634,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 635,
+                end: 636,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 636,
+                end: 640,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 641,
+                end: 643,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 643,
+                end: 644,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 644,
+                end: 646,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Float(
+            ByteOffset {
+                start: 647,
+                end: 652,
+            },
+        ),
+        content: "13.37",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 653,
+                end: 655,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 655,
+                end: 656,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 656,
+                end: 658,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 659,
+                end: 660,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Float(
+            ByteOffset {
+                start: 660,
+                end: 665,
+            },
+        ),
+        content: "13.37",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 666,
+                end: 668,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 668,
+                end: 669,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 669,
+                end: 671,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 672,
+                end: 673,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 673,
+                end: 677,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 678,
+                end: 680,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 680,
+                end: 681,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 681,
+                end: 683,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Float(
+            ByteOffset {
+                start: 684,
+                end: 689,
+            },
+        ),
+        content: "13.37",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 690,
+                end: 692,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 692,
+                end: 693,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 693,
+                end: 695,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 696,
+                end: 697,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Float(
+            ByteOffset {
+                start: 697,
+                end: 702,
+            },
+        ),
+        content: "13.37",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 703,
+                end: 705,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 705,
+                end: 706,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 706,
+                end: 708,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 709,
+                end: 713,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 714,
+                end: 715,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 716,
+                end: 717,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 717,
+                end: 721,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 722,
+                end: 724,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 724,
+                end: 725,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 725,
+                end: 727,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 728,
+                end: 729,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 729,
+                end: 733,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '+',
+            ByteOffset {
+                start: 734,
+                end: 735,
+            },
+        ),
+        content: "+",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 736,
+                end: 737,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 737,
+                end: 741,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 742,
+                end: 744,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 744,
+                end: 745,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 745,
+                end: 747,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 748,
+                end: 749,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 749,
+                end: 753,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '+',
+            ByteOffset {
+                start: 753,
+                end: 754,
+            },
+        ),
+        content: "+",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 754,
+                end: 755,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Int(
+            ByteOffset {
+                start: 755,
+                end: 759,
+            },
+        ),
+        content: "1337",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 760,
+                end: 762,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 762,
+                end: 763,
+            },
+        ),
+        content: "\n",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 763,
+                end: 765,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 766,
+                end: 767,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Float(
+            ByteOffset {
+                start: 767,
+                end: 776,
+            },
+        ),
+        content: "1337.1337",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '+',
+            ByteOffset {
+                start: 776,
+                end: 777,
+            },
+        ),
+        content: "+",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '-',
+            ByteOffset {
+                start: 777,
+                end: 778,
+            },
+        ),
+        content: "-",
+    },
+    TokenSnapshot {
+        token: Float(
+            ByteOffset {
+                start: 778,
+                end: 783,
+            },
+        ),
+        content: "13.33",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 784,
+                end: 786,
+            },
+        ),
+        content: "}}",
+    },
+]

@@ -1,10 +1,11 @@
+use miette::Diagnostic;
 use thiserror::Error;
 
 use super::lexer::Token;
 use super::{Ast, ByteOffset, Expr};
 use crate::scripting::AstNode;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Diagnostic)]
 pub enum ParsingError {
     #[error("{0:?}: Expected `{1}`")]
     ExpectedKeyword(ByteOffset, &'static str),
@@ -42,7 +43,6 @@ impl<'ast, 'tokens> Parser<'ast, 'tokens> {
 
     pub fn parse_all(&mut self) -> Result<(), ParsingError> {
         while !self.is_at_end() {
-            println!("{}", self.pos);
             let node = self.parse()?;
             self.ast.nodes.push(node);
         }
@@ -136,6 +136,7 @@ impl<'ast, 'tokens> Parser<'ast, 'tokens> {
             let Some(Token::Keyword(mut loc)) = self.peek() else {
                 break 'outer self.parse_expr().map(Box::new).map(AstNode::Expr);
             };
+
             match &self.ast.source[loc.range()] {
                 "if" => {
                     self.next();
@@ -422,10 +423,7 @@ impl<'ast, 'tokens> Parser<'ast, 'tokens> {
                 self.next();
                 Ok(Expr::String(loc, ByteOffset::new(loc.start + 1, loc.end - 1)))
             }
-            Some(t) => {
-                println!("{t:?}");
-                Err(ParsingError::UnexpectedToken(t.loc()))
-            }
+            Some(t) => Err(ParsingError::UnexpectedToken(t.loc())),
             None => Err(ParsingError::UnexpectedTokenEof),
         }
     }

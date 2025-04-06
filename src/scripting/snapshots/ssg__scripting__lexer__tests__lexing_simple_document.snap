@@ -1,0 +1,461 @@
+---
+source: src/scripting/lexer.rs
+expression: tokens
+---
+[
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 0,
+                end: 117,
+            },
+        ),
+        content: "<!DOCTYPE html>\n<html lang=\"en\">\n  <head id=\"head\">\n    <meta charset=\"UTF-8\">\n    <meta name=\"description\" content=\"",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 117,
+                end: 119,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 120,
+                end: 124,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 124,
+                end: 125,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 125,
+                end: 136,
+            },
+        ),
+        content: "description",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 137,
+                end: 139,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 139,
+                end: 147,
+            },
+        ),
+        content: "\">\n\n    ",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 147,
+                end: 149,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 150,
+                end: 152,
+            },
+        ),
+        content: "if",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 153,
+                end: 157,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 157,
+                end: 158,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 158,
+                end: 164,
+            },
+        ),
+        content: "author",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 165,
+                end: 167,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 167,
+                end: 179,
+            },
+        ),
+        content: "\n    <title>",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 179,
+                end: 181,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 182,
+                end: 186,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 186,
+                end: 187,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 187,
+                end: 192,
+            },
+        ),
+        content: "title",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 193,
+                end: 195,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 195,
+                end: 198,
+            },
+        ),
+        content: " - ",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 198,
+                end: 200,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 201,
+                end: 205,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 205,
+                end: 206,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 206,
+                end: 212,
+            },
+        ),
+        content: "author",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 213,
+                end: 215,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 215,
+                end: 228,
+            },
+        ),
+        content: "</title>\n    ",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 228,
+                end: 230,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 231,
+                end: 235,
+            },
+        ),
+        content: "else",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 236,
+                end: 238,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 238,
+                end: 250,
+            },
+        ),
+        content: "\n    <title>",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 250,
+                end: 252,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 253,
+                end: 257,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: Symbol(
+            '.',
+            ByteOffset {
+                start: 257,
+                end: 258,
+            },
+        ),
+        content: ".",
+    },
+    TokenSnapshot {
+        token: Identifier(
+            ByteOffset {
+                start: 258,
+                end: 263,
+            },
+        ),
+        content: "title",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 264,
+                end: 266,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 266,
+                end: 279,
+            },
+        ),
+        content: "</title>\n    ",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 279,
+                end: 281,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 282,
+                end: 285,
+            },
+        ),
+        content: "end",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 286,
+                end: 288,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 288,
+                end: 294,
+            },
+        ),
+        content: "\n\n    ",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 294,
+                end: 296,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 297,
+                end: 301,
+            },
+        ),
+        content: "slot",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 303,
+                end: 307,
+            },
+        ),
+        content: "head",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 309,
+                end: 311,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 311,
+                end: 348,
+            },
+        ),
+        content: "\n  </head>\n  <body>\n    <main>\n      ",
+    },
+    TokenSnapshot {
+        token: ExprStart(
+            ByteOffset {
+                start: 348,
+                end: 350,
+            },
+        ),
+        content: "{{",
+    },
+    TokenSnapshot {
+        token: Keyword(
+            ByteOffset {
+                start: 351,
+                end: 355,
+            },
+        ),
+        content: "slot",
+    },
+    TokenSnapshot {
+        token: StringLiteral(
+            ByteOffset {
+                start: 357,
+                end: 361,
+            },
+        ),
+        content: "page",
+    },
+    TokenSnapshot {
+        token: ExprEnd(
+            ByteOffset {
+                start: 363,
+                end: 365,
+            },
+        ),
+        content: "}}",
+    },
+    TokenSnapshot {
+        token: Html(
+            ByteOffset {
+                start: 365,
+                end: 395,
+            },
+        ),
+        content: "\n    </main>\n  </body>\n</html>",
+    },
+]
