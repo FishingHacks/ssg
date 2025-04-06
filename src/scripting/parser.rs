@@ -137,7 +137,7 @@ impl<'ast> Parser<'ast> {
     }
 
     fn is_at_end(&mut self) -> Result<bool, ParsingError> {
-        Ok(self.peek()?.is_some())
+        Ok(self.peek()?.is_none())
     }
 
     fn next(&mut self) -> TokenResult {

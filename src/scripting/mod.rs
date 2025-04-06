@@ -30,7 +30,7 @@ impl Add for ByteOffset {
     fn add(self, rhs: Self) -> Self::Output {
         Self {
             start: self.start.min(rhs.start),
-            end: self.end.min(rhs.end),
+            end: self.end.max(rhs.end),
         }
     }
 }
@@ -60,9 +60,9 @@ impl From<usize> for ByteOffset {
         }
     }
 }
-impl Into<SourceSpan> for ByteOffset {
-    fn into(self) -> SourceSpan {
-        self.range().into()
+impl From<ByteOffset> for SourceSpan {
+    fn from(val: ByteOffset) -> Self {
+        val.range().into()
     }
 }
 
@@ -206,6 +206,7 @@ pub fn parse_template(template: String) -> Result<Ast, ParsingError> {
     Ok(ast)
 }
 
+#[allow(dead_code)]
 pub fn print_token(src: &str, tok: &Token) {
     match tok {
         Token::Html(byte_offset) => println!("Html({:?})", &src[byte_offset.range()]),
@@ -222,6 +223,7 @@ pub fn print_token(src: &str, tok: &Token) {
     }
 }
 
+#[allow(dead_code)]
 pub fn print_node(src: &str, node: &AstNode, indent: usize) {
     for _ in 0..indent {
         print!("    ");
@@ -287,6 +289,7 @@ pub fn print_node(src: &str, node: &AstNode, indent: usize) {
     }
 }
 
+#[allow(dead_code)]
 pub fn print_expr(src: &str, expr: &Expr) {
     match expr {
         Expr::String(_, range) => print!("{:?}", &src[range.range()]),
@@ -368,4 +371,37 @@ pub fn print_expr(src: &str, expr: &Expr) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn simple_page() {
+        let src = r#"
+<!DOCTYPE html>
+<html lang="en">
+    <head id="head">
+        <meta charset="UTF-8">
+
+        <meta name="description" content="{{ page.description }}">
+
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        {{ if page.author }}
+        <title>{{ page.title }} - {{ page.author }}</title>
+        {{ else }}
+        <title>{{ page.title }}</title>
+        {{ end }}
+
+        {{ slot "head" }}
+    </head>
+
+    <body>
+        <main>
+            {{ slot "page" }}
+        </main>
+    </body>
+</html>
+"#;
+        let ast = parse_template(src.into()).unwrap();
+        insta::assert_debug_snapshot!(ast);
+    }
 }
