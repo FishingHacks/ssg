@@ -143,7 +143,7 @@ impl Pipeline {
             outpath = step.output_file(outpath);
         }
 
-        // TODO: This creates between 1 unused files: the `infile` (here the `outfile`, will be
+        // PERF: This creates between 1 unused files: the `infile` (here the `outfile`, will be
         // re-assigned in the first iteration), that's unused by the first loop due to using
         // `inpath`
         let mut infile;

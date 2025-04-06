@@ -1,9 +1,8 @@
 use std::ops::{Add, AddAssign, Range};
 use std::sync::Arc;
 
-use lexer::{Lexer, LexingError, Token};
-use miette::Diagnostic;
-use parser::ParsingError;
+use lexer::Token;
+use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
 mod lexer;
@@ -47,6 +46,37 @@ impl From<(usize, usize)> for ByteOffset {
         Self { start, end }
     }
 }
+impl From<Range<usize>> for ByteOffset {
+    fn from(Range { start, end }: Range<usize>) -> Self {
+        debug_assert!(end > start);
+        Self { start, end }
+    }
+}
+impl From<usize> for ByteOffset {
+    fn from(value: usize) -> Self {
+        Self {
+            start: value,
+            end: value + 1,
+        }
+    }
+}
+impl Into<SourceSpan> for ByteOffset {
+    fn into(self) -> SourceSpan {
+        self.range().into()
+    }
+}
+
+#[derive(Debug, Error, Diagnostic)]
+#[error("While parsing template")]
+#[diagnostic()]
+pub struct ParsingError {
+    #[source_code]
+    pub(super) src: Arc<String>,
+    #[label = "in this section"]
+    pub(super) at: SourceSpan,
+    #[help]
+    pub(super) help: String,
+}
 
 #[derive(Debug)]
 pub struct Ast {
@@ -55,6 +85,9 @@ pub struct Ast {
 }
 
 #[derive(Debug)]
+// TODO: Remove
+// temporary, the fields will be used when doing evaluation
+#[allow(dead_code)]
 pub enum AstNode {
     // Does not include either quotes. Extend/shorten by 1 on either side to get the quotes too
     Html(ByteOffset),
@@ -101,11 +134,16 @@ impl AstNode {
 }
 
 #[derive(Debug)]
+// TODO: Remove
+// temporary, the fields will be used when doing evaluation
+#[allow(dead_code)]
 pub enum Expr {
     /// ` ┌───────────────┐ <- .0 `
     /// ` "my fancy string"       `
     /// `  └─────────────┘  <- .1 `
     String(ByteOffset, ByteOffset),
+    Float(ByteOffset, f64),
+    Int(ByteOffset, i64),
     Var(ByteOffset),
     /// <expr _1>._2
     /// ` ┌──────────────┐ <- .0 `
@@ -130,13 +168,17 @@ pub enum Expr {
     // <expr _1> != <expr _2>
     NotEqual(ByteOffset, Box<Expr>, Box<Expr>),
     // <expr _1> + <expr _2>
-    Concat(ByteOffset, Box<Expr>, Box<Expr>),
+    Add(ByteOffset, Box<Expr>, Box<Expr>),
+    // <expr _1> - <expr _2>
+    Sub(ByteOffset, Box<Expr>, Box<Expr>),
 }
 
 impl Expr {
     pub fn loc(&self) -> ByteOffset {
         match self {
             Expr::String(byte_offset, ..)
+            | Expr::Float(byte_offset, ..)
+            | Expr::Int(byte_offset, ..)
             | Expr::Var(byte_offset)
             | Expr::Index(byte_offset, ..)
             | Expr::FuncCall(byte_offset, ..)
@@ -146,34 +188,19 @@ impl Expr {
             | Expr::Or(byte_offset, ..)
             | Expr::Equal(byte_offset, ..)
             | Expr::NotEqual(byte_offset, ..)
-            | Expr::Concat(byte_offset, ..) => *byte_offset,
+            | Expr::Add(byte_offset, ..)
+            | Expr::Sub(byte_offset, ..) => *byte_offset,
         }
     }
 }
 
-#[derive(Debug, Error, Diagnostic)]
-pub enum MyError {
-    #[error(transparent)]
-    #[diagnostic(transparent)]
-    LexingError(#[from] LexingError),
-
-    #[error(transparent)]
-    #[diagnostic(transparent)]
-    ParsingError(#[from] ParsingError),
-}
-
-pub fn parse_template(template: String) -> Result<Ast, MyError> {
+pub fn parse_template(template: String) -> Result<Ast, ParsingError> {
     let mut ast = Ast {
         source: Arc::new(template),
         nodes: vec![],
     };
 
-    let mut tokens = vec![];
-    let lexer = Lexer::new(ast.source.clone());
-    for token in lexer {
-        tokens.push(token?);
-    }
-    let mut parser = parser::Parser::new(&mut ast, &tokens);
+    let mut parser = parser::Parser::new(&mut ast);
     parser.parse_all()?;
 
     Ok(ast)
@@ -192,7 +219,6 @@ pub fn print_token(src: &str, tok: &Token) {
         Token::Float(byte_offset) => println!("Float({})", &src[byte_offset.range()]),
         Token::Int(byte_offset) => println!("Int({})", &src[byte_offset.range()]),
         Token::Symbol(c, _) => println!("Symbol({c:?})"),
-        Token::Dot(_) => println!("Dot('.')"),
     }
 }
 
@@ -264,6 +290,8 @@ pub fn print_node(src: &str, node: &AstNode, indent: usize) {
 pub fn print_expr(src: &str, expr: &Expr) {
     match expr {
         Expr::String(_, range) => print!("{:?}", &src[range.range()]),
+        Expr::Float(_, v) => print!("{v}"),
+        Expr::Int(_, v) => print!("{v}"),
         Expr::Var(byte_offset) => print!("{}", &src[byte_offset.range()]),
         Expr::Index(_, lhs, rhs) => {
             print!("(index ");
@@ -320,12 +348,24 @@ pub fn print_expr(src: &str, expr: &Expr) {
             print_expr(src, rhs);
             print!(")");
         }
-        Expr::Concat(_, lhs, rhs) => {
-            print!("(concat ");
+        Expr::Add(_, lhs, rhs) => {
+            print!("(add ");
+            print_expr(src, lhs);
+            print!(", ");
+            print_expr(src, rhs);
+            print!(")");
+        }
+        Expr::Sub(_, lhs, rhs) => {
+            print!("(sub ");
             print_expr(src, lhs);
             print!(", ");
             print_expr(src, rhs);
             print!(")");
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
 }

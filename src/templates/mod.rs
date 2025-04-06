@@ -5,7 +5,7 @@ use miette::Diagnostic;
 use thiserror::Error;
 
 use crate::config::{ResolvePath, SiteConfig};
-use crate::scripting::{self, MyError};
+use crate::scripting::{self, ParsingError};
 
 #[derive(Debug, Error, Diagnostic)]
 pub enum TemplateError {
@@ -26,7 +26,7 @@ pub enum TemplateError {
 
     #[error(transparent)]
     #[diagnostic(transparent)]
-    ScriptingError(#[from] MyError),
+    ScriptingError(#[from] ParsingError),
 }
 
 #[derive(Debug)]
@@ -48,7 +48,6 @@ pub async fn load_templates(config: &SiteConfig) -> Result<HashMap<PathBuf, Page
             let path = entry.into_path().resolve(&config.root_dir);
             tokio::spawn(async move {
                 let content = tokio::fs::read_to_string(&path).await?;
-                // TODO: unwrap is forbidden but... hear me out <- ur scared of error handling?
                 let ast = scripting::parse_template(content)?;
                 Result::<_, TemplateError>::Ok(PageTemplate { ast, path })
             })

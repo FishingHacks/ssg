@@ -1,22 +1,7 @@
 use std::ops::ControlFlow;
 use std::sync::Arc;
 
-use miette::{Diagnostic, SourceSpan};
-use thiserror::Error;
-
-use super::ByteOffset;
-
-#[derive(Debug, Error, Diagnostic)]
-#[error("While parsing template")]
-#[diagnostic()]
-pub struct LexingError {
-    #[source_code]
-    src: Arc<String>,
-    #[label = "in this section"]
-    at: SourceSpan,
-    #[help]
-    help: String,
-}
+use super::{ByteOffset, ParsingError};
 
 #[derive(Debug)]
 enum LexingMode {
@@ -29,10 +14,9 @@ pub struct Lexer {
     cursor: usize,
     source: Arc<String>,
     mode: LexingMode,
-    pub tokens: Vec<Token>,
     html_start: Option<usize>,
     script_start: Option<usize>,
-    peeked: Option<Result<Token, LexingError>>,
+    peeked: Option<Result<Token, ParsingError>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -46,7 +30,6 @@ pub enum Token {
     Symbol(char, ByteOffset),
     Float(ByteOffset),
     Int(ByteOffset),
-    Dot(ByteOffset),
 }
 
 impl Token {
@@ -60,8 +43,7 @@ impl Token {
             | Token::Keyword(byte_offset)
             | Token::Symbol(_, byte_offset)
             | Token::Float(byte_offset)
-            | Token::Int(byte_offset)
-            | Token::Dot(byte_offset) => *byte_offset,
+            | Token::Int(byte_offset) => *byte_offset,
         }
     }
 }
@@ -75,16 +57,7 @@ impl Lexer {
             html_start: None,
             script_start: None,
             mode: LexingMode::Html,
-            tokens: vec![],
         }
-    }
-
-    pub fn peek(&mut self) -> Option<&Result<Token, LexingError>> {
-        if self.peeked.is_none() {
-            self.peeked = self.next();
-        }
-
-        self.peeked.as_ref()
     }
 
     fn is_keyword(&self, ident: &str) -> bool {
@@ -99,7 +72,7 @@ impl Lexer {
         self.script_start = Some(self.cursor);
     }
 
-    fn lex_html(&mut self, curr: char, next: Option<char>) -> ControlFlow<Result<Token, LexingError>, ()> {
+    fn lex_html(&mut self, curr: char, next: Option<char>) -> ControlFlow<Result<Token, ParsingError>, ()> {
         match (curr, next) {
             ('{', Some('{')) => {
                 self.mode = LexingMode::Script;
@@ -130,7 +103,7 @@ impl Lexer {
         }
     }
 
-    fn lex_script(&mut self, curr: char, next: Option<char>) -> ControlFlow<Result<Token, LexingError>> {
+    fn lex_script(&mut self, curr: char, next: Option<char>) -> ControlFlow<Result<Token, ParsingError>> {
         match (curr, next) {
             (c, _) if c.is_whitespace() => {
                 self.advance_script(c.len_utf8());
@@ -210,7 +183,7 @@ impl Lexer {
                 let source = &self.source[self.cursor..];
 
                 let Some(length) = source.find(curr) else {
-                    return ControlFlow::Break(Err(LexingError {
+                    return ControlFlow::Break(Err(ParsingError {
                         src: self.source.clone(),
                         at: (start..self.source.len()).into(),
                         help: "unterminated string".into(),
@@ -240,7 +213,7 @@ impl Lexer {
                 match (dotted.next(), dotted.next(), dotted.next()) {
                     // found at least 2 dots on a number. thats a invalid float
                     (Some(_), Some(_), Some(_)) => {
-                        return ControlFlow::Break(Err(LexingError {
+                        return ControlFlow::Break(Err(ParsingError {
                             src: self.source.clone(),
                             at: (start..end).into(),
                             help: "invalid numeral".into(),
@@ -288,7 +261,7 @@ impl Lexer {
 }
 
 impl Iterator for Lexer {
-    type Item = Result<Token, LexingError>;
+    type Item = Result<Token, ParsingError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
