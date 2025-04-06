@@ -61,7 +61,7 @@ impl<'ast> Parser<'ast> {
     }
 
     pub fn parse_all(&mut self) -> Result<(), ParsingError> {
-        while !self.is_at_end() {
+        while !self.is_at_end()? {
             let node = self.parse()?;
             self.ast.nodes.push(node);
         }
@@ -136,8 +136,8 @@ impl<'ast> Parser<'ast> {
         }
     }
 
-    fn is_at_end(&self) -> bool {
-        self.at_end
+    fn is_at_end(&mut self) -> Result<bool, ParsingError> {
+        Ok(self.peek()?.is_some())
     }
 
     fn next(&mut self) -> TokenResult {
