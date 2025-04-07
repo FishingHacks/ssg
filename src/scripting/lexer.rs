@@ -96,6 +96,7 @@ impl Token {
                 | Token::GreaterEqual(_)
                 | Token::NotEqual(_)
                 | Token::Equal(_)
+                | Token::Dot(_)
                 | Token::Mul(_)
         )
     }

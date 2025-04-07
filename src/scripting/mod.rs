@@ -111,7 +111,7 @@ pub enum AstNode {
     ForLoop {
         identifier: ByteOffset,
         index: Option<ByteOffset>,
-        list: ByteOffset,
+        list: Box<AstNode>,
         offset: ByteOffset,
         body: Vec<AstNode>,
     },
@@ -125,6 +125,11 @@ pub enum AstNode {
     },
     Block {
         name: ByteOffset,
+        offset: ByteOffset,
+    },
+    MemberAccess {
+        object: Box<AstNode>,
+        property: ByteOffset,
         offset: ByteOffset,
     },
 }
@@ -172,12 +177,13 @@ impl AstNode {
             | AstNode::StringLiteral(offset)
             | AstNode::IntLiteral(offset)
             | AstNode::FloatLiteral(offset) => *offset,
-            AstNode::Render { offset, .. } => *offset,
             AstNode::Block { offset, .. } => *offset,
             AstNode::Extend { offset, .. } => *offset,
-            AstNode::Variable { ident, value } => *ident + value.loc(),
-            AstNode::BinaryOp { offset, .. } => *offset,
+            AstNode::Render { offset, .. } => *offset,
             AstNode::ForLoop { offset, .. } => *offset,
+            AstNode::BinaryOp { offset, .. } => *offset,
+            AstNode::MemberAccess { offset, .. } => *offset,
+            AstNode::Variable { ident, value } => *ident + value.loc(),
         }
     }
 }

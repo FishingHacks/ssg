@@ -1,0 +1,40 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    MemberAccess {
+        offset: ByteOffsetSnapshot {
+            end: 19,
+            start: 3,
+            content: "page.author.name",
+        },
+        content: "page.author.name",
+        property: ByteOffsetSnapshot {
+            end: 19,
+            start: 15,
+            content: "name",
+        },
+        object: MemberAccess {
+            offset: ByteOffsetSnapshot {
+                end: 14,
+                start: 3,
+                content: "page.author",
+            },
+            content: "page.author",
+            property: ByteOffsetSnapshot {
+                end: 14,
+                start: 8,
+                content: "author",
+            },
+            object: Identifier {
+                offset: ByteOffsetSnapshot {
+                    end: 7,
+                    start: 3,
+                    content: "page",
+                },
+                content: "page",
+            },
+        },
+    },
+]

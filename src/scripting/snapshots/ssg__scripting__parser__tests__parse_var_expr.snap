@@ -4,43 +4,49 @@ expression: ast
 ---
 [
     Variable {
-        ident: ByteOffset {
-            start: 3,
+        ident: ByteOffsetSnapshot {
             end: 11,
+            start: 3,
+            content: "var_name",
         },
         value: BinaryOp {
             left: BinaryOp {
                 left: IntLiteral {
-                    offset: ByteOffset {
-                        start: 16,
+                    offset: ByteOffsetSnapshot {
                         end: 19,
+                        start: 16,
+                        content: "100",
                     },
                     content: "100",
                 },
                 right: IntLiteral {
-                    offset: ByteOffset {
-                        start: 22,
+                    offset: ByteOffsetSnapshot {
                         end: 25,
+                        start: 22,
+                        content: "300",
                     },
                     content: "300",
                 },
-                offset: ByteOffset {
-                    start: 16,
+                offset: ByteOffsetSnapshot {
                     end: 25,
+                    start: 16,
+                    content: "100 + 300",
                 },
                 content: "100 + 300",
                 operator: Plus,
             },
             right: IntLiteral {
-                offset: ByteOffset {
-                    start: 29,
+                offset: ByteOffsetSnapshot {
                     end: 32,
+                    start: 29,
+                    content: "200",
                 },
                 content: "200",
             },
-            offset: ByteOffset {
-                start: 16,
+            offset: ByteOffsetSnapshot {
                 end: 32,
+                start: 16,
+                content: "100 + 300) * 200",
             },
             content: "100 + 300) * 200",
             operator: Mul,

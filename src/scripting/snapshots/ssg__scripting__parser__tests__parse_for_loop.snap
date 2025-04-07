@@ -4,48 +4,72 @@ expression: ast
 ---
 [
     ForLoop {
-        identifier: ByteOffset {
-            start: 7,
+        identifier: ByteOffsetSnapshot {
             end: 10,
+            start: 7,
+            content: "tag",
         },
         index: Some(
-            ByteOffset {
-                start: 12,
+            ByteOffsetSnapshot {
                 end: 15,
+                start: 12,
+                content: "idx",
             },
         ),
-        list: ByteOffset {
-            start: 19,
-            end: 23,
+        list: MemberAccess {
+            offset: ByteOffsetSnapshot {
+                end: 28,
+                start: 19,
+                content: "page.tags",
+            },
+            content: "page.tags",
+            property: ByteOffsetSnapshot {
+                end: 28,
+                start: 24,
+                content: "tags",
+            },
+            object: Identifier {
+                offset: ByteOffsetSnapshot {
+                    end: 23,
+                    start: 19,
+                    content: "page",
+                },
+                content: "page",
+            },
         },
-        offset: ByteOffset {
+        offset: ByteOffsetSnapshot {
+            end: 28,
             start: 3,
-            end: 23,
+            content: "for tag, idx in page.tags",
         },
-        content: "for tag, idx in tags",
+        content: "for tag, idx in page.tags",
         body: [
             Html {
-                offset: ByteOffset {
-                    start: 26,
-                    end: 68,
+                offset: ByteOffsetSnapshot {
+                    end: 73,
+                    start: 31,
+                    content: "\n<div>\n  <span>Hello World!</span>\n</div>\n",
                 },
                 content: "\n<div>\n  <span>Hello World!</span>\n</div>\n",
             },
             Render {
-                component: ByteOffset {
-                    start: 79,
-                    end: 90,
+                component: ByteOffsetSnapshot {
+                    end: 95,
+                    start: 84,
+                    content: "button.html",
                 },
-                offset: ByteOffset {
-                    start: 71,
-                    end: 90,
+                offset: ByteOffsetSnapshot {
+                    end: 95,
+                    start: 76,
+                    content: "render \"button.html",
                 },
                 content: "render \"button.html",
             },
             Html {
-                offset: ByteOffset {
-                    start: 94,
-                    end: 137,
+                offset: ByteOffsetSnapshot {
+                    end: 142,
+                    start: 99,
+                    content: "\n<div>\n  <span>Hello Another</span>\n</div>\n",
                 },
                 content: "\n<div>\n  <span>Hello Another</span>\n</div>\n",
             },

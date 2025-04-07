@@ -1,16 +1,8 @@
 use std::sync::Arc;
 
-use miette::SourceSpan;
-
 use super::lexer::{Lexer, Token};
-use super::{Ast, ByteOffset, Expr, Operator, ParsingError};
+use super::{Ast, Operator, ParsingError};
 use crate::scripting::AstNode;
-
-const EXPECTED_STR: &str = "Expected a string";
-const EXPECTED_IDENT: &str = "Expected an identifier";
-const EXPECTED_LIT_OR_PARENS: &str = "Expected (, an identifier or a literal";
-const INVALID_INT: &str = "That is an invalid integer";
-const INVALID_FLOAT: &str = "That is an invalid float";
 
 mod precedences {
     pub const BASE: u8 = 0;
@@ -18,13 +10,15 @@ mod precedences {
     pub const MUL: u8 = 4;
     pub const ASSOC: u8 = 5;
     pub const APPLY: u8 = 6;
+    pub const MEMBER: u8 = 7;
 }
 
 fn get_precedence(token: Token) -> u8 {
     match token {
-        Token::Plus(_) => precedences::SUM,
+        Token::Plus(_) | Token::Minus(_) => precedences::SUM,
         Token::Mul(_) => precedences::MUL,
         Token::LeftParen(_) => precedences::APPLY,
+        Token::Dot(_) => precedences::MEMBER,
         _ => precedences::BASE,
     }
 }
@@ -180,8 +174,8 @@ impl Parser {
         }
 
         let expr = self.parse_expression(precedences::BASE)?;
-
         expect!(self.lexer, Token::ScriptEnd(_))?;
+
         Ok(expr)
     }
 
@@ -223,19 +217,31 @@ impl Parser {
                 break;
             }
 
-            let Some(operator) = consume!(self.lexer) else {
-                unreachable!();
-            };
+            match next {
+                Token::Dot(_) => {
+                    expect!(self.lexer, Token::Dot(_))?;
+                    let property = expect!(self.lexer, Token::Identifier(_))?;
+                    println!("{property:?}");
+                    let offset = left.loc() + property.loc();
 
-            let operator = Operator::new_unchecked(operator);
+                    left = AstNode::MemberAccess {
+                        object: Box::new(left),
+                        property: property.loc(),
+                        offset,
+                    };
+                }
+                _ => {
+                    let operator = consume!(self.lexer).expect("operator must exist here");
+                    let operator = Operator::new_unchecked(operator);
+                    let right = self.parse_expression(precedence)?;
 
-            let right = self.parse_expression(precedence)?;
-
-            left = AstNode::BinaryOp {
-                offset: left.loc() + right.loc(),
-                left: Box::new(left),
-                right: Box::new(right),
-                operator,
+                    left = AstNode::BinaryOp {
+                        offset: left.loc() + right.loc(),
+                        left: Box::new(left),
+                        right: Box::new(right),
+                        operator,
+                    }
+                }
             }
         }
 
@@ -267,8 +273,8 @@ impl Parser {
         };
 
         expect!(self.lexer, Token::In(_))?;
-        let list = expect!(self.lexer, Token::Identifier(_))?.loc();
-        let offset = keyword.loc() + list;
+        let list = self.parse_expression(precedences::BASE)?;
+        let offset = keyword.loc() + list.loc();
 
         expect!(self.lexer, Token::ScriptEnd(_))?;
 
@@ -277,7 +283,7 @@ impl Parser {
         Ok(AstNode::ForLoop {
             identifier,
             index,
-            list,
+            list: Box::new(list),
             offset,
             body,
         })
@@ -307,66 +313,90 @@ impl Parser {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
+    use crate::scripting::ByteOffset;
+
+    #[allow(dead_code)]
+    #[derive(Debug)]
+    struct ByteOffsetSnapshot<'ast> {
+        end: usize,
+        start: usize,
+        content: &'ast str,
+    }
+
+    impl<'ast> ByteOffsetSnapshot<'ast> {
+        fn with_content(offset: ByteOffset, source: &'ast str) -> Self {
+            Self {
+                end: offset.end,
+                start: offset.start,
+                content: &source[offset.range()],
+            }
+        }
+    }
 
     #[allow(dead_code)]
     #[derive(Debug)]
     enum AstNodeSnapshot<'ast> {
         Html {
-            offset: ByteOffset,
+            offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
         },
         Identifier {
-            offset: ByteOffset,
+            offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
         },
         IntLiteral {
-            offset: ByteOffset,
+            offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
         },
         FloatLiteral {
-            offset: ByteOffset,
+            offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
         },
         StringLiteral {
-            offset: ByteOffset,
+            offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
         },
         Variable {
-            ident: ByteOffset,
+            ident: ByteOffsetSnapshot<'ast>,
             value: Box<AstNodeSnapshot<'ast>>,
             content: &'ast str,
         },
         BinaryOp {
             left: Box<AstNodeSnapshot<'ast>>,
             right: Box<AstNodeSnapshot<'ast>>,
-            offset: ByteOffset,
+            offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
             operator: Operator,
         },
         ForLoop {
-            identifier: ByteOffset,
-            index: Option<ByteOffset>,
-            list: ByteOffset,
-            offset: ByteOffset,
+            identifier: ByteOffsetSnapshot<'ast>,
+            index: Option<ByteOffsetSnapshot<'ast>>,
+            list: Box<AstNodeSnapshot<'ast>>,
+            offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
             body: Vec<AstNodeSnapshot<'ast>>,
         },
         Render {
-            component: ByteOffset,
-            offset: ByteOffset,
+            component: ByteOffsetSnapshot<'ast>,
+            offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
         },
         Extend {
-            template: ByteOffset,
-            offset: ByteOffset,
+            template: ByteOffsetSnapshot<'ast>,
+            offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
         },
         Block {
-            name: ByteOffset,
-            offset: ByteOffset,
+            name: ByteOffsetSnapshot<'ast>,
+            offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
+        },
+        MemberAccess {
+            offset: ByteOffsetSnapshot<'ast>,
+            content: &'ast str,
+            property: ByteOffsetSnapshot<'ast>,
+            object: Box<AstNodeSnapshot<'ast>>,
         },
     }
 
@@ -374,28 +404,28 @@ mod tests {
         match node {
             AstNode::Html(offset) => AstNodeSnapshot::Html {
                 content: &source[offset.range()],
-                offset,
+                offset: ByteOffsetSnapshot::with_content(offset, source),
             },
             AstNode::Identifier(offset) => AstNodeSnapshot::Identifier {
                 content: &source[offset.range()],
-                offset,
+                offset: ByteOffsetSnapshot::with_content(offset, source),
             },
             AstNode::IntLiteral(offset) => AstNodeSnapshot::IntLiteral {
                 content: &source[offset.range()],
-                offset,
+                offset: ByteOffsetSnapshot::with_content(offset, source),
             },
             AstNode::FloatLiteral(offset) => AstNodeSnapshot::FloatLiteral {
                 content: &source[offset.range()],
-                offset,
+                offset: ByteOffsetSnapshot::with_content(offset, source),
             },
             AstNode::StringLiteral(offset) => AstNodeSnapshot::StringLiteral {
                 content: &source[offset.range()],
-                offset,
+                offset: ByteOffsetSnapshot::with_content(offset, source),
             },
             AstNode::Variable { ident, value } => AstNodeSnapshot::Variable {
                 content: &source[(ident + value.loc()).range()],
-                ident,
                 value: Box::new(node_to_snapshot(*value, source)),
+                ident: ByteOffsetSnapshot::with_content(ident, source),
             },
             AstNode::BinaryOp {
                 left,
@@ -403,11 +433,11 @@ mod tests {
                 operator,
                 offset,
             } => AstNodeSnapshot::BinaryOp {
+                operator,
                 content: &source[offset.range()],
                 left: Box::new(node_to_snapshot(*left, source)),
                 right: Box::new(node_to_snapshot(*right, source)),
-                operator,
-                offset,
+                offset: ByteOffsetSnapshot::with_content(offset, source),
             },
             AstNode::ForLoop {
                 identifier,
@@ -417,26 +447,36 @@ mod tests {
                 body,
             } => AstNodeSnapshot::ForLoop {
                 content: &source[offset.range()],
-                identifier,
-                offset,
-                index,
-                list,
+                list: Box::new(node_to_snapshot(*list, source)),
+                offset: ByteOffsetSnapshot::with_content(offset, source),
+                identifier: ByteOffsetSnapshot::with_content(identifier, source),
+                index: index.map(|index| ByteOffsetSnapshot::with_content(index, source)),
                 body: body.into_iter().map(|node| node_to_snapshot(node, source)).collect(),
             },
             AstNode::Render { component, offset } => AstNodeSnapshot::Render {
                 content: &source[offset.range()],
-                component,
-                offset,
+                offset: ByteOffsetSnapshot::with_content(offset, source),
+                component: ByteOffsetSnapshot::with_content(component, source),
             },
             AstNode::Extend { template, offset } => AstNodeSnapshot::Extend {
                 content: &source[offset.range()],
-                template,
-                offset,
+                offset: ByteOffsetSnapshot::with_content(offset, source),
+                template: ByteOffsetSnapshot::with_content(template, source),
             },
             AstNode::Block { name, offset } => AstNodeSnapshot::Block {
                 content: &source[offset.range()],
-                name,
+                name: ByteOffsetSnapshot::with_content(name, source),
+                offset: ByteOffsetSnapshot::with_content(offset, source),
+            },
+            AstNode::MemberAccess {
+                object,
                 offset,
+                property,
+            } => AstNodeSnapshot::MemberAccess {
+                content: &source[offset.range()],
+                object: Box::new(node_to_snapshot(*object, source)),
+                offset: ByteOffsetSnapshot::with_content(offset, source),
+                property: ByteOffsetSnapshot::with_content(property, source),
             },
         }
     }
@@ -516,7 +556,7 @@ mod tests {
     #[test]
     fn test_parse_for_loop() {
         let source = [
-            "{{ for tag, idx in tags }}",
+            "{{ for tag, idx in page.tags }}",
             "<div>",
             "  <span>Hello World!</span>",
             "</div>",
@@ -545,7 +585,7 @@ mod tests {
     #[test]
     fn test_parse_for_without_idx() {
         let source = [
-            "{{ for tag in tags }}",
+            "{{ for tag in page.tags }}",
             "<div>",
             "  <span>Hello World!</span>",
             "</div>",
@@ -558,6 +598,24 @@ mod tests {
         .join("\n");
 
         let source = Arc::new(source);
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all().unwrap();
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
+    }
+
+    #[test]
+    fn test_parse_member_access() {
+        let source = String::from("{{ page.author.name }}");
+        let source = Arc::new(source);
+
         let lexer = Lexer::new(source.clone());
         let mut parser = Parser::new(source.clone(), lexer);
         let ast = parser.parse_all().unwrap();
