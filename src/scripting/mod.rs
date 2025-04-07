@@ -132,6 +132,11 @@ pub enum AstNode {
         property: ByteOffset,
         offset: ByteOffset,
     },
+    FunctionCall {
+        function: Box<AstNode>,
+        args: Vec<AstNode>,
+        offset: ByteOffset,
+    },
 }
 
 #[derive(Debug)]
@@ -183,6 +188,7 @@ impl AstNode {
             AstNode::ForLoop { offset, .. } => *offset,
             AstNode::BinaryOp { offset, .. } => *offset,
             AstNode::MemberAccess { offset, .. } => *offset,
+            AstNode::FunctionCall { offset, .. } => *offset,
             AstNode::Variable { ident, value } => *ident + value.loc(),
         }
     }

@@ -221,12 +221,34 @@ impl Parser {
                 Token::Dot(_) => {
                     expect!(self.lexer, Token::Dot(_))?;
                     let property = expect!(self.lexer, Token::Identifier(_))?;
-                    println!("{property:?}");
                     let offset = left.loc() + property.loc();
 
                     left = AstNode::MemberAccess {
                         object: Box::new(left),
                         property: property.loc(),
+                        offset,
+                    };
+                }
+                Token::LeftParen(_) => {
+                    expect!(self.lexer, Token::LeftParen(_))?;
+                    let mut args = vec![];
+
+                    while !matches!(peek_bail!(self.lexer), Token::RightParen(_)) {
+                        args.push(self.parse_expression(precedences::BASE)?);
+
+                        if !matches!(peek_bail!(self.lexer), Token::Comma(_)) {
+                            break;
+                        }
+
+                        consume!(self.lexer);
+                    }
+
+                    let closing = expect!(self.lexer, Token::RightParen(_))?;
+                    let offset = left.loc() + closing.loc();
+
+                    left = AstNode::FunctionCall {
+                        function: Box::new(left),
+                        args,
                         offset,
                     };
                 }
@@ -398,6 +420,11 @@ mod tests {
             property: ByteOffsetSnapshot<'ast>,
             object: Box<AstNodeSnapshot<'ast>>,
         },
+        FunctionCall {
+            function: Box<AstNodeSnapshot<'ast>>,
+            args: Vec<AstNodeSnapshot<'ast>>,
+            offset: ByteOffsetSnapshot<'ast>,
+        },
     }
 
     fn node_to_snapshot(node: AstNode, source: &str) -> AstNodeSnapshot<'_> {
@@ -477,6 +504,11 @@ mod tests {
                 object: Box::new(node_to_snapshot(*object, source)),
                 offset: ByteOffsetSnapshot::with_content(offset, source),
                 property: ByteOffsetSnapshot::with_content(property, source),
+            },
+            AstNode::FunctionCall { args, function, offset } => AstNodeSnapshot::FunctionCall {
+                function: Box::new(node_to_snapshot(*function, source)),
+                offset: ByteOffsetSnapshot::with_content(offset, source),
+                args: args.into_iter().map(|arg| node_to_snapshot(arg, source)).collect(),
             },
         }
     }
@@ -614,6 +646,24 @@ mod tests {
     #[test]
     fn test_parse_member_access() {
         let source = String::from("{{ page.author.name }}");
+        let source = Arc::new(source);
+
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all().unwrap();
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
+    }
+
+    #[test]
+    fn test_parse_function_calls() {
+        let source = String::from("{{ site.assets.get('assets/logo.png') }}");
         let source = Arc::new(source);
 
         let lexer = Lexer::new(source.clone());

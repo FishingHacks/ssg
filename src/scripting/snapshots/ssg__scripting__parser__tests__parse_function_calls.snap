@@ -1,0 +1,57 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    FunctionCall {
+        function: MemberAccess {
+            offset: ByteOffsetSnapshot {
+                end: 18,
+                start: 3,
+                content: "site.assets.get",
+            },
+            content: "site.assets.get",
+            property: ByteOffsetSnapshot {
+                end: 18,
+                start: 15,
+                content: "get",
+            },
+            object: MemberAccess {
+                offset: ByteOffsetSnapshot {
+                    end: 14,
+                    start: 3,
+                    content: "site.assets",
+                },
+                content: "site.assets",
+                property: ByteOffsetSnapshot {
+                    end: 14,
+                    start: 8,
+                    content: "assets",
+                },
+                object: Identifier {
+                    offset: ByteOffsetSnapshot {
+                        end: 7,
+                        start: 3,
+                        content: "site",
+                    },
+                    content: "site",
+                },
+            },
+        },
+        args: [
+            StringLiteral {
+                offset: ByteOffsetSnapshot {
+                    end: 35,
+                    start: 20,
+                    content: "assets/logo.png",
+                },
+                content: "assets/logo.png",
+            },
+        ],
+        offset: ByteOffsetSnapshot {
+            end: 37,
+            start: 3,
+            content: "site.assets.get('assets/logo.png')",
+        },
+    },
+]
