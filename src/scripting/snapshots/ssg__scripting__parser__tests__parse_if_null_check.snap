@@ -1,0 +1,75 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    IfStatement {
+        condition: MemberAccess {
+            offset: ByteOffsetSnapshot {
+                end: 16,
+                start: 6,
+                content: "page.title",
+            },
+            content: "page.title",
+            property: ByteOffsetSnapshot {
+                end: 16,
+                start: 11,
+                content: "title",
+            },
+            object: Identifier {
+                offset: ByteOffsetSnapshot {
+                    end: 10,
+                    start: 6,
+                    content: "page",
+                },
+                content: "page",
+            },
+        },
+        truthy: [
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 27,
+                    start: 19,
+                    content: "\n<title>",
+                },
+                content: "\n<title>",
+            },
+            MemberAccess {
+                offset: ByteOffsetSnapshot {
+                    end: 40,
+                    start: 30,
+                    content: "page.title",
+                },
+                content: "page.title",
+                property: ByteOffsetSnapshot {
+                    end: 40,
+                    start: 35,
+                    content: "title",
+                },
+                object: Identifier {
+                    offset: ByteOffsetSnapshot {
+                        end: 34,
+                        start: 30,
+                        content: "page",
+                    },
+                    content: "page",
+                },
+            },
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 52,
+                    start: 43,
+                    content: "</title>\n",
+                },
+                content: "</title>\n",
+            },
+        ],
+        falsy: [],
+        offset: ByteOffsetSnapshot {
+            end: 61,
+            start: 0,
+            content: "{{ if page.title }}\n<title>{{ page.title }}</title>\n{{ end }}",
+        },
+        content: "{{ if page.title }}\n<title>{{ page.title }}</title>\n{{ end }}",
+    },
+]

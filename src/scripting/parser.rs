@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use super::lexer::{Lexer, Token};
-use super::{Ast, Operator, ParsingError};
+use super::{Ast, ByteOffset, Operator, ParsingError};
 use crate::scripting::AstNode;
 
 mod precedences {
@@ -101,6 +101,23 @@ macro_rules! expect {
 }
 
 #[derive(Debug)]
+struct BlockDelimiter {
+    delimiter: Token,
+    end: ByteOffset,
+    body: Vec<AstNode>,
+}
+
+impl Default for BlockDelimiter {
+    fn default() -> Self {
+        Self {
+            delimiter: Token::Html(Default::default()),
+            end: ByteOffset::default(),
+            body: vec![],
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Parser {
     source: Arc<String>,
     lexer: Lexer,
@@ -140,13 +157,18 @@ impl Parser {
     }
 
     fn parse_script_block(&mut self) -> Result<AstNode, ParsingError> {
-        expect!(self.lexer, Token::ScriptStart(_))?;
+        let start = expect!(self.lexer, Token::ScriptStart(_))?;
 
         let token = peek_bail!(self.lexer);
 
         if matches!(token, Token::For(_)) {
-            let keyword = expect!(self.lexer, Token::For(_))?;
-            return self.parse_for_loop(keyword);
+            consume!(self.lexer);
+            return self.parse_for_loop(start);
+        }
+
+        if matches!(token, Token::If(_)) {
+            consume!(self.lexer);
+            return self.parse_if_statement(start);
         }
 
         if matches!(token, Token::Render(_)) {
@@ -283,7 +305,7 @@ impl Parser {
         }
     }
 
-    fn parse_for_loop(&mut self, keyword: Token) -> Result<AstNode, ParsingError> {
+    fn parse_for_loop(&mut self, start: Token) -> Result<AstNode, ParsingError> {
         let identifier = expect!(self.lexer, Token::Identifier(_))?.loc();
 
         let index = match peek!(self.lexer) {
@@ -296,40 +318,70 @@ impl Parser {
 
         expect!(self.lexer, Token::In(_))?;
         let list = self.parse_expression(precedences::BASE)?;
-        let offset = keyword.loc() + list.loc();
-
         expect!(self.lexer, Token::ScriptEnd(_))?;
 
-        let body = self.parse_until_end_block()?;
+        let block = self.parse_until_block_delimiter(|t| matches!(t, Token::End(_)))?;
 
+        let offset = start.loc() + block.end;
         Ok(AstNode::ForLoop {
             identifier,
             index,
             list: Box::new(list),
             offset,
-            body,
+            body: block.body,
         })
     }
 
-    fn parse_until_end_block(&mut self) -> Result<Vec<AstNode>, ParsingError> {
-        let mut body = vec![];
+    fn parse_if_statement(&mut self, start: Token) -> Result<AstNode, ParsingError> {
+        let condition = self.parse_expression(precedences::BASE)?;
+        expect!(self.lexer, Token::ScriptEnd(_))?;
+
+        let truthy = self.parse_until_block_delimiter(|token| matches!(token, Token::End(_) | Token::Else(_)))?;
+
+        let mut falsy = vec![];
+        let mut end = truthy.end;
+
+        if matches!(truthy.delimiter, Token::Else(_)) {
+            let block = self.parse_until_block_delimiter(|t| matches!(t, Token::End(_)))?;
+            end = block.end;
+            falsy = block.body;
+        }
+
+        let offset = start.loc() + end;
+        Ok(AstNode::IfStatement {
+            condition: Box::new(condition),
+            truthy: truthy.body,
+            falsy,
+            offset,
+        })
+    }
+
+    fn parse_until_block_delimiter(
+        &mut self,
+        is_delimiter: impl Fn(Token) -> bool,
+    ) -> Result<BlockDelimiter, ParsingError> {
+        let mut block = BlockDelimiter::default();
 
         loop {
-            let first = peek_bail!(self.lexer);
-            let second = peek_bail!(self.lexer, 1);
+            let start = peek_bail!(self.lexer);
+            let keyword = peek_bail!(self.lexer, 1);
 
-            if matches!(first, Token::ScriptStart(_)) && matches!(second, Token::End(_)) {
+            if matches!(start, Token::ScriptStart(_)) && is_delimiter(keyword) {
                 consume!(self.lexer, 2);
-                expect!(self.lexer, Token::ScriptEnd(_))?;
+                let end_script = expect!(self.lexer, Token::ScriptEnd(_))?;
+
+                block.delimiter = keyword;
+                block.end = end_script.loc();
+
                 break;
             }
 
             let node = self.parse()?;
 
-            body.push(node);
+            block.body.push(node);
         }
 
-        Ok(body)
+        Ok(block)
     }
 }
 
@@ -424,6 +476,14 @@ mod tests {
             function: Box<AstNodeSnapshot<'ast>>,
             args: Vec<AstNodeSnapshot<'ast>>,
             offset: ByteOffsetSnapshot<'ast>,
+            content: &'ast str,
+        },
+        IfStatement {
+            condition: Box<AstNodeSnapshot<'ast>>,
+            truthy: Vec<AstNodeSnapshot<'ast>>,
+            falsy: Vec<AstNodeSnapshot<'ast>>,
+            offset: ByteOffsetSnapshot<'ast>,
+            content: &'ast str,
         },
     }
 
@@ -509,6 +569,19 @@ mod tests {
                 function: Box::new(node_to_snapshot(*function, source)),
                 offset: ByteOffsetSnapshot::with_content(offset, source),
                 args: args.into_iter().map(|arg| node_to_snapshot(arg, source)).collect(),
+                content: &source[offset.range()],
+            },
+            AstNode::IfStatement {
+                condition,
+                truthy,
+                falsy,
+                offset,
+            } => AstNodeSnapshot::IfStatement {
+                condition: Box::new(node_to_snapshot(*condition, source)),
+                truthy: truthy.into_iter().map(|node| node_to_snapshot(node, source)).collect(),
+                falsy: falsy.into_iter().map(|node| node_to_snapshot(node, source)).collect(),
+                offset: ByteOffsetSnapshot::with_content(offset, source),
+                content: &source[offset.range()],
             },
         }
     }
@@ -664,6 +737,78 @@ mod tests {
     #[test]
     fn test_parse_function_calls() {
         let source = String::from("{{ site.assets.get('assets/logo.png') }}");
+        let source = Arc::new(source);
+
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all().unwrap();
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
+    }
+
+    #[test]
+    fn test_parse_if_null_check() {
+        let source = ["{{ if page.title }}", "<title>{{ page.title }}</title>", "{{ end }}"].join("\n");
+        let source = Arc::new(source);
+
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all().unwrap();
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
+    }
+
+    #[test]
+    fn test_parse_if_else() {
+        let source = [
+            "{{ if page.author }}",
+            "<title>{{ page.title }} - {{ page.author }}<title>",
+            "{{ else }}",
+            "<title>{{ page.title }}</title>",
+            "{{ end }}",
+        ]
+        .join("\n");
+        let source = Arc::new(source);
+
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all().unwrap();
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
+    }
+
+    #[test]
+    fn test_parse_if_nested() {
+        let source = [
+            "{{ if page.author }}",
+            "  {{ if page.author.name }}",
+            "  <title>{{ page.title }} - {{ page.author.name }}<title>",
+            "  {{ else }}",
+            "  <title>{{ page.title }} - {{ page.author }}<title>",
+            "  {{ end }}",
+            "{{ else }}",
+            "<title>{{ page.title }}</title>",
+            "{{ end }}",
+        ]
+        .join("\n");
         let source = Arc::new(source);
 
         let lexer = Lexer::new(source.clone());

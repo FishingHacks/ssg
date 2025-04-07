@@ -1,0 +1,142 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    IfStatement {
+        condition: MemberAccess {
+            offset: ByteOffsetSnapshot {
+                end: 17,
+                start: 6,
+                content: "page.author",
+            },
+            content: "page.author",
+            property: ByteOffsetSnapshot {
+                end: 17,
+                start: 11,
+                content: "author",
+            },
+            object: Identifier {
+                offset: ByteOffsetSnapshot {
+                    end: 10,
+                    start: 6,
+                    content: "page",
+                },
+                content: "page",
+            },
+        },
+        truthy: [
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 28,
+                    start: 20,
+                    content: "\n<title>",
+                },
+                content: "\n<title>",
+            },
+            MemberAccess {
+                offset: ByteOffsetSnapshot {
+                    end: 41,
+                    start: 31,
+                    content: "page.title",
+                },
+                content: "page.title",
+                property: ByteOffsetSnapshot {
+                    end: 41,
+                    start: 36,
+                    content: "title",
+                },
+                object: Identifier {
+                    offset: ByteOffsetSnapshot {
+                        end: 35,
+                        start: 31,
+                        content: "page",
+                    },
+                    content: "page",
+                },
+            },
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 47,
+                    start: 44,
+                    content: " - ",
+                },
+                content: " - ",
+            },
+            MemberAccess {
+                offset: ByteOffsetSnapshot {
+                    end: 61,
+                    start: 50,
+                    content: "page.author",
+                },
+                content: "page.author",
+                property: ByteOffsetSnapshot {
+                    end: 61,
+                    start: 55,
+                    content: "author",
+                },
+                object: Identifier {
+                    offset: ByteOffsetSnapshot {
+                        end: 54,
+                        start: 50,
+                        content: "page",
+                    },
+                    content: "page",
+                },
+            },
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 72,
+                    start: 64,
+                    content: "<title>\n",
+                },
+                content: "<title>\n",
+            },
+        ],
+        falsy: [
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 90,
+                    start: 82,
+                    content: "\n<title>",
+                },
+                content: "\n<title>",
+            },
+            MemberAccess {
+                offset: ByteOffsetSnapshot {
+                    end: 103,
+                    start: 93,
+                    content: "page.title",
+                },
+                content: "page.title",
+                property: ByteOffsetSnapshot {
+                    end: 103,
+                    start: 98,
+                    content: "title",
+                },
+                object: Identifier {
+                    offset: ByteOffsetSnapshot {
+                        end: 97,
+                        start: 93,
+                        content: "page",
+                    },
+                    content: "page",
+                },
+            },
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 115,
+                    start: 106,
+                    content: "</title>\n",
+                },
+                content: "</title>\n",
+            },
+        ],
+        offset: ByteOffsetSnapshot {
+            end: 124,
+            start: 0,
+            content: "{{ if page.author }}\n<title>{{ page.title }} - {{ page.author }}<title>\n{{ else }}\n<title>{{ page.title }}</title>\n{{ end }}",
+        },
+        content: "{{ if page.author }}\n<title>{{ page.title }} - {{ page.author }}<title>\n{{ else }}\n<title>{{ page.title }}</title>\n{{ end }}",
+    },
+]

@@ -38,11 +38,11 @@ expression: ast
             },
         },
         offset: ByteOffsetSnapshot {
-            end: 28,
-            start: 3,
-            content: "for tag, idx in page.tags",
+            end: 151,
+            start: 0,
+            content: "{{ for tag, idx in page.tags }}\n<div>\n  <span>Hello World!</span>\n</div>\n{{ render \"button.html\" }}\n<div>\n  <span>Hello Another</span>\n</div>\n{{ end }}",
         },
-        content: "for tag, idx in page.tags",
+        content: "{{ for tag, idx in page.tags }}\n<div>\n  <span>Hello World!</span>\n</div>\n{{ render \"button.html\" }}\n<div>\n  <span>Hello Another</span>\n</div>\n{{ end }}",
         body: [
             Html {
                 offset: ByteOffsetSnapshot {

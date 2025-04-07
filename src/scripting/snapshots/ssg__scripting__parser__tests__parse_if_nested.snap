@@ -1,0 +1,283 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    IfStatement {
+        condition: MemberAccess {
+            offset: ByteOffsetSnapshot {
+                end: 17,
+                start: 6,
+                content: "page.author",
+            },
+            content: "page.author",
+            property: ByteOffsetSnapshot {
+                end: 17,
+                start: 11,
+                content: "author",
+            },
+            object: Identifier {
+                offset: ByteOffsetSnapshot {
+                    end: 10,
+                    start: 6,
+                    content: "page",
+                },
+                content: "page",
+            },
+        },
+        truthy: [
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 23,
+                    start: 20,
+                    content: "\n  ",
+                },
+                content: "\n  ",
+            },
+            IfStatement {
+                condition: MemberAccess {
+                    offset: ByteOffsetSnapshot {
+                        end: 45,
+                        start: 29,
+                        content: "page.author.name",
+                    },
+                    content: "page.author.name",
+                    property: ByteOffsetSnapshot {
+                        end: 45,
+                        start: 41,
+                        content: "name",
+                    },
+                    object: MemberAccess {
+                        offset: ByteOffsetSnapshot {
+                            end: 40,
+                            start: 29,
+                            content: "page.author",
+                        },
+                        content: "page.author",
+                        property: ByteOffsetSnapshot {
+                            end: 40,
+                            start: 34,
+                            content: "author",
+                        },
+                        object: Identifier {
+                            offset: ByteOffsetSnapshot {
+                                end: 33,
+                                start: 29,
+                                content: "page",
+                            },
+                            content: "page",
+                        },
+                    },
+                },
+                truthy: [
+                    Html {
+                        offset: ByteOffsetSnapshot {
+                            end: 58,
+                            start: 48,
+                            content: "\n  <title>",
+                        },
+                        content: "\n  <title>",
+                    },
+                    MemberAccess {
+                        offset: ByteOffsetSnapshot {
+                            end: 71,
+                            start: 61,
+                            content: "page.title",
+                        },
+                        content: "page.title",
+                        property: ByteOffsetSnapshot {
+                            end: 71,
+                            start: 66,
+                            content: "title",
+                        },
+                        object: Identifier {
+                            offset: ByteOffsetSnapshot {
+                                end: 65,
+                                start: 61,
+                                content: "page",
+                            },
+                            content: "page",
+                        },
+                    },
+                    Html {
+                        offset: ByteOffsetSnapshot {
+                            end: 77,
+                            start: 74,
+                            content: " - ",
+                        },
+                        content: " - ",
+                    },
+                    MemberAccess {
+                        offset: ByteOffsetSnapshot {
+                            end: 96,
+                            start: 80,
+                            content: "page.author.name",
+                        },
+                        content: "page.author.name",
+                        property: ByteOffsetSnapshot {
+                            end: 96,
+                            start: 92,
+                            content: "name",
+                        },
+                        object: MemberAccess {
+                            offset: ByteOffsetSnapshot {
+                                end: 91,
+                                start: 80,
+                                content: "page.author",
+                            },
+                            content: "page.author",
+                            property: ByteOffsetSnapshot {
+                                end: 91,
+                                start: 85,
+                                content: "author",
+                            },
+                            object: Identifier {
+                                offset: ByteOffsetSnapshot {
+                                    end: 84,
+                                    start: 80,
+                                    content: "page",
+                                },
+                                content: "page",
+                            },
+                        },
+                    },
+                    Html {
+                        offset: ByteOffsetSnapshot {
+                            end: 109,
+                            start: 99,
+                            content: "<title>\n  ",
+                        },
+                        content: "<title>\n  ",
+                    },
+                ],
+                falsy: [
+                    Html {
+                        offset: ByteOffsetSnapshot {
+                            end: 129,
+                            start: 119,
+                            content: "\n  <title>",
+                        },
+                        content: "\n  <title>",
+                    },
+                    MemberAccess {
+                        offset: ByteOffsetSnapshot {
+                            end: 142,
+                            start: 132,
+                            content: "page.title",
+                        },
+                        content: "page.title",
+                        property: ByteOffsetSnapshot {
+                            end: 142,
+                            start: 137,
+                            content: "title",
+                        },
+                        object: Identifier {
+                            offset: ByteOffsetSnapshot {
+                                end: 136,
+                                start: 132,
+                                content: "page",
+                            },
+                            content: "page",
+                        },
+                    },
+                    Html {
+                        offset: ByteOffsetSnapshot {
+                            end: 148,
+                            start: 145,
+                            content: " - ",
+                        },
+                        content: " - ",
+                    },
+                    MemberAccess {
+                        offset: ByteOffsetSnapshot {
+                            end: 162,
+                            start: 151,
+                            content: "page.author",
+                        },
+                        content: "page.author",
+                        property: ByteOffsetSnapshot {
+                            end: 162,
+                            start: 156,
+                            content: "author",
+                        },
+                        object: Identifier {
+                            offset: ByteOffsetSnapshot {
+                                end: 155,
+                                start: 151,
+                                content: "page",
+                            },
+                            content: "page",
+                        },
+                    },
+                    Html {
+                        offset: ByteOffsetSnapshot {
+                            end: 175,
+                            start: 165,
+                            content: "<title>\n  ",
+                        },
+                        content: "<title>\n  ",
+                    },
+                ],
+                offset: ByteOffsetSnapshot {
+                    end: 184,
+                    start: 23,
+                    content: "{{ if page.author.name }}\n  <title>{{ page.title }} - {{ page.author.name }}<title>\n  {{ else }}\n  <title>{{ page.title }} - {{ page.author }}<title>\n  {{ end }}",
+                },
+                content: "{{ if page.author.name }}\n  <title>{{ page.title }} - {{ page.author.name }}<title>\n  {{ else }}\n  <title>{{ page.title }} - {{ page.author }}<title>\n  {{ end }}",
+            },
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 185,
+                    start: 184,
+                    content: "\n",
+                },
+                content: "\n",
+            },
+        ],
+        falsy: [
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 203,
+                    start: 195,
+                    content: "\n<title>",
+                },
+                content: "\n<title>",
+            },
+            MemberAccess {
+                offset: ByteOffsetSnapshot {
+                    end: 216,
+                    start: 206,
+                    content: "page.title",
+                },
+                content: "page.title",
+                property: ByteOffsetSnapshot {
+                    end: 216,
+                    start: 211,
+                    content: "title",
+                },
+                object: Identifier {
+                    offset: ByteOffsetSnapshot {
+                        end: 210,
+                        start: 206,
+                        content: "page",
+                    },
+                    content: "page",
+                },
+            },
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 228,
+                    start: 219,
+                    content: "</title>\n",
+                },
+                content: "</title>\n",
+            },
+        ],
+        offset: ByteOffsetSnapshot {
+            end: 237,
+            start: 0,
+            content: "{{ if page.author }}\n  {{ if page.author.name }}\n  <title>{{ page.title }} - {{ page.author.name }}<title>\n  {{ else }}\n  <title>{{ page.title }} - {{ page.author }}<title>\n  {{ end }}\n{{ else }}\n<title>{{ page.title }}</title>\n{{ end }}",
+        },
+        content: "{{ if page.author }}\n  {{ if page.author.name }}\n  <title>{{ page.title }} - {{ page.author.name }}<title>\n  {{ else }}\n  <title>{{ page.title }} - {{ page.author }}<title>\n  {{ end }}\n{{ else }}\n<title>{{ page.title }}</title>\n{{ end }}",
+    },
+]

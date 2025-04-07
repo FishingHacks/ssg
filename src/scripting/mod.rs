@@ -9,7 +9,7 @@ use thiserror::Error;
 mod lexer;
 mod parser;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct ByteOffset {
     start: usize,
     end: usize,
@@ -137,6 +137,12 @@ pub enum AstNode {
         args: Vec<AstNode>,
         offset: ByteOffset,
     },
+    IfStatement {
+        condition: Box<AstNode>,
+        truthy: Vec<AstNode>,
+        falsy: Vec<AstNode>,
+        offset: ByteOffset,
+    },
 }
 
 #[derive(Debug)]
@@ -187,6 +193,7 @@ impl AstNode {
             AstNode::Render { offset, .. } => *offset,
             AstNode::ForLoop { offset, .. } => *offset,
             AstNode::BinaryOp { offset, .. } => *offset,
+            AstNode::IfStatement { offset, .. } => *offset,
             AstNode::MemberAccess { offset, .. } => *offset,
             AstNode::FunctionCall { offset, .. } => *offset,
             AstNode::Variable { ident, value } => *ident + value.loc(),

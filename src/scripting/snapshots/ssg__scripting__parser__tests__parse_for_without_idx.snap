@@ -32,11 +32,11 @@ expression: ast
             },
         },
         offset: ByteOffsetSnapshot {
-            end: 23,
-            start: 3,
-            content: "for tag in page.tags",
+            end: 146,
+            start: 0,
+            content: "{{ for tag in page.tags }}\n<div>\n  <span>Hello World!</span>\n</div>\n{{ render \"button.html\" }}\n<div>\n  <span>Hello Another</span>\n</div>\n{{ end }}",
         },
-        content: "for tag in page.tags",
+        content: "{{ for tag in page.tags }}\n<div>\n  <span>Hello World!</span>\n</div>\n{{ render \"button.html\" }}\n<div>\n  <span>Hello Another</span>\n</div>\n{{ end }}",
         body: [
             Html {
                 offset: ByteOffsetSnapshot {

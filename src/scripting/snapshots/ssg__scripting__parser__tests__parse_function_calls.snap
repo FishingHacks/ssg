@@ -53,5 +53,6 @@ expression: ast
             start: 3,
             content: "site.assets.get('assets/logo.png')",
         },
+        content: "site.assets.get('assets/logo.png')",
     },
 ]
