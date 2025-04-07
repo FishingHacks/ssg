@@ -38,11 +38,11 @@ expression: ast
             },
         },
         offset: ByteOffsetSnapshot {
-            end: 151,
+            end: 155,
             start: 0,
-            content: "{{ for tag, idx in page.tags }}\n<div>\n  <span>Hello World!</span>\n</div>\n{{ render \"button.html\" }}\n<div>\n  <span>Hello Another</span>\n</div>\n{{ end }}",
+            content: "{{ for tag, idx in page.tags }}\n<div>\n  <span>Hello World!</span>\n</div>\n{{ render \"button.html\" end }}\n<div>\n  <span>Hello Another</span>\n</div>\n{{ end }}",
         },
-        content: "{{ for tag, idx in page.tags }}\n<div>\n  <span>Hello World!</span>\n</div>\n{{ render \"button.html\" }}\n<div>\n  <span>Hello Another</span>\n</div>\n{{ end }}",
+        content: "{{ for tag, idx in page.tags }}\n<div>\n  <span>Hello World!</span>\n</div>\n{{ render \"button.html\" end }}\n<div>\n  <span>Hello Another</span>\n</div>\n{{ end }}",
         body: [
             Html {
                 offset: ByteOffsetSnapshot {
@@ -60,15 +60,16 @@ expression: ast
                 },
                 offset: ByteOffsetSnapshot {
                     end: 95,
-                    start: 76,
-                    content: "render \"button.html",
+                    start: 84,
+                    content: "button.html",
                 },
-                content: "render \"button.html",
+                content: "button.html",
+                body: [],
             },
             Html {
                 offset: ByteOffsetSnapshot {
-                    end: 142,
-                    start: 99,
+                    end: 146,
+                    start: 103,
                     content: "\n<div>\n  <span>Hello Another</span>\n</div>\n",
                 },
                 content: "\n<div>\n  <span>Hello Another</span>\n</div>\n",

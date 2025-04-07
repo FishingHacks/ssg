@@ -197,12 +197,14 @@ impl Parser {
             return self.parse_if_statement(start);
         }
 
+        if matches!(token, Token::Block(_)) {
+            consume!(self.lexer);
+            return self.parse_block(start);
+        }
+
         if matches!(token, Token::Render(_)) {
-            let keyword = expect!(self.lexer, Token::Render(_))?;
-            let component = expect!(self.lexer, Token::StringLiteral(_))?.loc();
-            let offset = keyword.loc() + component;
-            expect!(self.lexer, Token::ScriptEnd(_))?;
-            return Ok(AstNode::Render { component, offset });
+            consume!(self.lexer);
+            return self.parse_render();
         }
 
         if matches!(token, Token::Extend(_)) {
@@ -211,14 +213,6 @@ impl Parser {
             let offset = keyword.loc() + template;
             expect!(self.lexer, Token::ScriptEnd(_))?;
             return Ok(AstNode::Extend { template, offset });
-        }
-
-        if matches!(token, Token::Block(_)) {
-            let keyword = expect!(self.lexer, Token::Block(_))?;
-            let name = expect!(self.lexer, Token::StringLiteral(_))?.loc();
-            let offset = keyword.loc() + name;
-            expect!(self.lexer, Token::ScriptEnd(_))?;
-            return Ok(AstNode::Block { name, offset });
         }
 
         let expr = self.parse_expression(precedences::BASE)?;
@@ -235,8 +229,14 @@ impl Parser {
             Some(Token::Float(offset)) => AstNode::FloatLiteral(offset),
             Some(Token::StringLiteral(offset)) => AstNode::StringLiteral(offset),
             Some(token) if token.is_operator() => self.parse_operator(token)?,
+            Some(token) => {
+                return Err(ParsingError {
+                    src: self.source.clone(),
+                    at: token.loc().range().into(),
+                    help: "Unexpected token".into(),
+                });
+            }
             None => unreachable!(),
-            t => unreachable!("{t:?}"),
         };
 
         if let Token::Assign(_) = peek_bail!(self.lexer) {
@@ -390,6 +390,43 @@ impl Parser {
         })
     }
 
+    fn parse_block(&mut self, start: Token) -> Result<AstNode, ParsingError> {
+        let name = expect!(self.lexer, Token::StringLiteral(_))?.loc();
+        expect!(self.lexer, Token::ScriptEnd(_))?;
+
+        let block = self.parse_until_block_delimiter(|t| matches!(t, Token::End(_)))?;
+        let offset = start.loc() + block.end;
+
+        Ok(AstNode::Block {
+            name,
+            offset,
+            body: block.body,
+        })
+    }
+
+    fn parse_render(&mut self) -> Result<AstNode, ParsingError> {
+        let component = expect!(self.lexer, Token::StringLiteral(_))?.loc();
+        let mut block = BlockDelimiter::default();
+
+        // when the component name is not immediately followed by a `end`, render
+        // block has a body
+        let has_block = matches!(peek_bail!(self.lexer), Token::ScriptEnd(_));
+        if has_block {
+            consume!(self.lexer);
+            block = self.parse_until_block_delimiter(|t| matches!(t, Token::End(_)))?;
+        } else {
+            expect!(self.lexer, Token::End(_))?;
+            expect!(self.lexer, Token::ScriptEnd(_))?;
+        }
+
+        let offset = if has_block { component + block.end } else { component };
+        Ok(AstNode::Render {
+            component,
+            offset,
+            body: block.body,
+        })
+    }
+
     fn parse_until_block_delimiter(
         &mut self,
         is_delimiter: impl Fn(Token) -> bool,
@@ -489,6 +526,7 @@ mod tests {
             component: ByteOffsetSnapshot<'ast>,
             offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
+            body: Vec<AstNodeSnapshot<'ast>>,
         },
         Extend {
             template: ByteOffsetSnapshot<'ast>,
@@ -499,6 +537,7 @@ mod tests {
             name: ByteOffsetSnapshot<'ast>,
             offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
+            body: Vec<AstNodeSnapshot<'ast>>,
         },
         MemberAccess {
             offset: ByteOffsetSnapshot<'ast>,
@@ -582,20 +621,32 @@ mod tests {
                     .map(|node| node_to_snapshot(node, source))
                     .collect(),
             },
-            AstNode::Render { component, offset } => AstNodeSnapshot::Render {
+            AstNode::Render {
+                component,
+                body,
+                offset,
+            } => AstNodeSnapshot::Render {
                 content: &source[offset.range()],
                 offset: ByteOffsetSnapshot::with_content(offset, source),
                 component: ByteOffsetSnapshot::with_content(component, source),
+                body: body
+                    .into_iter()
+                    .map(|node| node_to_snapshot(node, source))
+                    .collect(),
             },
             AstNode::Extend { template, offset } => AstNodeSnapshot::Extend {
                 content: &source[offset.range()],
                 offset: ByteOffsetSnapshot::with_content(offset, source),
                 template: ByteOffsetSnapshot::with_content(template, source),
             },
-            AstNode::Block { name, offset } => AstNodeSnapshot::Block {
+            AstNode::Block { name, offset, body } => AstNodeSnapshot::Block {
                 content: &source[offset.range()],
                 name: ByteOffsetSnapshot::with_content(name, source),
                 offset: ByteOffsetSnapshot::with_content(offset, source),
+                body: body
+                    .into_iter()
+                    .map(|node| node_to_snapshot(node, source))
+                    .collect(),
             },
             AstNode::MemberAccess {
                 object,
@@ -725,7 +776,7 @@ mod tests {
             "<div>",
             "  <span>Hello World!</span>",
             "</div>",
-            "{{ render \"button.html\" }}",
+            "{{ render \"button.html\" end }}",
             "<div>",
             "  <span>Hello Another</span>",
             "</div>",
@@ -754,7 +805,7 @@ mod tests {
             "<div>",
             "  <span>Hello World!</span>",
             "</div>",
-            "{{ render \"button.html\" }}",
+            "{{ render \"button.html\" end }}",
             "<div>",
             "  <span>Hello Another</span>",
             "</div>",
@@ -906,7 +957,6 @@ mod tests {
             "{{ something * other_thing }}",
             "{{ something / other_thing }}",
             "{{ something % other_thing }}",
-            "{{ something % other_thing }}",
         ]
         .join("");
         let source = Arc::new(source);
@@ -933,6 +983,57 @@ mod tests {
             "{{ not (something and other_thing) }}",
         ]
         .join("");
+        let source = Arc::new(source);
+
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all()?;
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_blocks() -> miette::Result<()> {
+        let source = [
+            "{{ block \"name\" }}",
+            "<span>html here</span>",
+            "{{ end }}",
+        ]
+        .join("\n");
+        let source = Arc::new(source);
+
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all()?;
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_render_blocks() -> miette::Result<()> {
+        let source = [
+            "{{ render \"other\" end }}",
+            "{{ render \"name\" }}",
+            "<span>html here</span>",
+            "{{ end }}",
+        ]
+        .join("\n");
         let source = Arc::new(source);
 
         let lexer = Lexer::new(source.clone());

@@ -118,6 +118,7 @@ pub enum AstNode {
     Render {
         component: ByteOffset,
         offset: ByteOffset,
+        body: Vec<AstNode>,
     },
     Extend {
         template: ByteOffset,
@@ -126,6 +127,7 @@ pub enum AstNode {
     Block {
         name: ByteOffset,
         offset: ByteOffset,
+        body: Vec<AstNode>,
     },
     MemberAccess {
         object: Box<AstNode>,

@@ -353,29 +353,4 @@ expression: ast
         content: "something % other_thing",
         operator: Modulo,
     },
-    BinaryOp {
-        left: Identifier {
-            offset: ByteOffsetSnapshot {
-                end: 426,
-                start: 417,
-                content: "something",
-            },
-            content: "something",
-        },
-        right: Identifier {
-            offset: ByteOffsetSnapshot {
-                end: 440,
-                start: 429,
-                content: "other_thing",
-            },
-            content: "other_thing",
-        },
-        offset: ByteOffsetSnapshot {
-            end: 440,
-            start: 417,
-            content: "something % other_thing",
-        },
-        content: "something % other_thing",
-        operator: Modulo,
-    },
 ]

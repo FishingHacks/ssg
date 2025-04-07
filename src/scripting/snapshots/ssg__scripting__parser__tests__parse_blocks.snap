@@ -1,0 +1,29 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    Block {
+        name: ByteOffsetSnapshot {
+            end: 14,
+            start: 10,
+            content: "name",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 51,
+            start: 0,
+            content: "{{ block \"name\" }}\n<span>html here</span>\n{{ end }}",
+        },
+        content: "{{ block \"name\" }}\n<span>html here</span>\n{{ end }}",
+        body: [
+            Html {
+                offset: ByteOffsetSnapshot {
+                    end: 42,
+                    start: 18,
+                    content: "\n<span>html here</span>\n",
+                },
+                content: "\n<span>html here</span>\n",
+            },
+        ],
+    },
+]
