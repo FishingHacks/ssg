@@ -234,7 +234,9 @@ pub fn parser_from_filetype(filetype: FileType) -> ParserImpl {
     }
 }
 
-pub async fn parse_content(config: &SiteConfig) -> miette::Result<Vec<ContentPage>, ContentParseError> {
+pub async fn parse_content(
+    config: &SiteConfig,
+) -> miette::Result<Vec<ContentPage>, ContentParseError> {
     if !config.content_dir.exists() {
         return Err(ContentParseError::NoContent);
     }

@@ -45,9 +45,12 @@ impl SiteConfig {
             .content_dir
             .resolve_with_default(&root_dir, Path::new("content"));
 
-        let out_dir = unresolved.out_dir.resolve_with_default(&root_dir, Path::new("dist"));
+        let out_dir = unresolved
+            .out_dir
+            .resolve_with_default(&root_dir, Path::new("dist"));
 
         let index_page = unresolved.index_page.unwrap_or_else(|| "_index.md".into());
+
         let pipeline_cfg = PipelineConfig::from_unresolved(
             unresolved.pipelines.unwrap_or_default(),
             unresolved.pipeline.unwrap_or_default(),
@@ -67,12 +70,20 @@ impl SiteConfig {
 }
 
 pub trait ResolvePath {
-    fn resolve_with_default<T: AsRef<Path>, U: AsRef<Path>>(self, base_dir: T, default: U) -> PathBuf;
+    fn resolve_with_default<T: AsRef<Path>, U: AsRef<Path>>(
+        self,
+        base_dir: T,
+        default: U,
+    ) -> PathBuf;
     fn resolve<T: AsRef<Path>>(self, base_dir: T) -> PathBuf;
 }
 
 impl<T: AsRef<Path>> ResolvePath for Option<T> {
-    fn resolve_with_default<P: AsRef<Path>, U: AsRef<Path>>(self, base_dir: P, default: U) -> PathBuf {
+    fn resolve_with_default<P: AsRef<Path>, U: AsRef<Path>>(
+        self,
+        base_dir: P,
+        default: U,
+    ) -> PathBuf {
         let Some(path) = self else { return base_dir.as_ref().join(default) };
 
         if !path.as_ref().exists() {
@@ -94,7 +105,11 @@ impl<T: AsRef<Path>> ResolvePath for Option<T> {
 }
 
 impl<T: AsRef<Path>> ResolvePath for &T {
-    fn resolve_with_default<P: AsRef<Path>, U: AsRef<Path>>(self, base_dir: P, default: U) -> PathBuf {
+    fn resolve_with_default<P: AsRef<Path>, U: AsRef<Path>>(
+        self,
+        base_dir: P,
+        default: U,
+    ) -> PathBuf {
         if !self.as_ref().exists() {
             return base_dir.as_ref().join(default);
         }
@@ -125,10 +140,18 @@ pub fn load(root_dir: Option<PathBuf>, port: u16) -> Result<SiteConfig, ConfigRe
 
     let config_path = root_dir.join("config.toml");
     if !config_path.exists() {
-        return Ok(SiteConfig::from_unresolved(root_dir, port, Default::default()));
+        return Ok(SiteConfig::from_unresolved(
+            root_dir,
+            port,
+            Default::default(),
+        ));
     }
 
     let config_str = std::fs::read_to_string(&config_path)?;
     let unresolved_config = toml::from_str::<UnresolvedSiteConfig>(&config_str)?;
-    Ok(SiteConfig::from_unresolved(root_dir, port, unresolved_config))
+    Ok(SiteConfig::from_unresolved(
+        root_dir,
+        port,
+        unresolved_config,
+    ))
 }

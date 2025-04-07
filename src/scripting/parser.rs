@@ -6,20 +6,43 @@ use crate::scripting::AstNode;
 
 mod precedences {
     pub const BASE: u8 = 0;
-    pub const SUM: u8 = 3;
-    pub const MUL: u8 = 4;
-    pub const ASSOC: u8 = 5;
-    pub const APPLY: u8 = 6;
-    pub const MEMBER: u8 = 7;
+    pub const COALISCING: u8 = 1;
+    pub const OR: u8 = 2;
+    pub const AND: u8 = 3;
+    pub const RELATIONAL: u8 = 4;
+    pub const ADDITIVE: u8 = 5;
+    pub const MULTIPLICATIVE: u8 = 6;
+    pub const UNARY: u8 = 7;
+    pub const APPLICATION: u8 = 8;
 }
 
-fn get_precedence(token: Token) -> u8 {
-    match token {
-        Token::Plus(_) | Token::Minus(_) => precedences::SUM,
-        Token::Mul(_) => precedences::MUL,
-        Token::LeftParen(_) => precedences::APPLY,
-        Token::Dot(_) => precedences::MEMBER,
-        _ => precedences::BASE,
+fn get_precedence(operator: Operator) -> u8 {
+    match operator {
+        // null coalescing is lowest precedence
+        Operator::Either => precedences::COALISCING,
+
+        Operator::Or => precedences::OR,
+        Operator::And => precedences::AND,
+
+        // relational operators
+        Operator::Equal
+        | Operator::NotEqual
+        | Operator::GreaterEqual
+        | Operator::LesserEqual
+        | Operator::Greater
+        | Operator::Lesser => precedences::RELATIONAL,
+
+        // additive operators
+        Operator::Plus | Operator::Minus => precedences::ADDITIVE,
+
+        // multiplicative operators
+        Operator::Mul | Operator::Div | Operator::Modulo => precedences::MULTIPLICATIVE,
+
+        // unary operators
+        Operator::Not => precedences::UNARY,
+
+        // application operators
+        Operator::LeftParen | Operator::RightParen | Operator::Dot => precedences::APPLICATION,
     }
 }
 
@@ -80,7 +103,10 @@ macro_rules! expect {
         let Some(token) = $lexer.next().transpose()? else {
             return Err(ParsingError {
                 at: (0..1).into(),
-                help: format!("Unexpected token: expected {:?} but found EOF", stringify!($expected)),
+                help: format!(
+                    "Unexpected token: expected {:?} but found EOF",
+                    stringify!($expected)
+                ),
                 src: $lexer.source.clone(),
             });
         };
@@ -233,7 +259,7 @@ impl Parser {
                 return Ok(left);
             }
 
-            let precedence = get_precedence(next);
+            let precedence = get_precedence(Operator::new_unchecked(next));
 
             if precedence <= min_precedence {
                 break;
@@ -301,7 +327,14 @@ impl Parser {
                 expect!(self.lexer, Token::RightParen(_))?;
                 Ok(left)
             }
-            _ => unreachable!(),
+            Operator::Not => {
+                let left = self.parse_expression(precedences::UNARY)?;
+                Ok(AstNode::Not {
+                    offset: token.loc() + left.loc(),
+                    expr: Box::new(left),
+                })
+            }
+            t => unreachable!("{t:?}"),
         }
     }
 
@@ -336,7 +369,8 @@ impl Parser {
         let condition = self.parse_expression(precedences::BASE)?;
         expect!(self.lexer, Token::ScriptEnd(_))?;
 
-        let truthy = self.parse_until_block_delimiter(|token| matches!(token, Token::End(_) | Token::Else(_)))?;
+        let truthy = self
+            .parse_until_block_delimiter(|token| matches!(token, Token::End(_) | Token::Else(_)))?;
 
         let mut falsy = vec![];
         let mut end = truthy.end;
@@ -485,6 +519,11 @@ mod tests {
             offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
         },
+        Not {
+            expr: Box<AstNodeSnapshot<'ast>>,
+            offset: ByteOffsetSnapshot<'ast>,
+            content: &'ast str,
+        },
     }
 
     fn node_to_snapshot(node: AstNode, source: &str) -> AstNodeSnapshot<'_> {
@@ -538,7 +577,10 @@ mod tests {
                 offset: ByteOffsetSnapshot::with_content(offset, source),
                 identifier: ByteOffsetSnapshot::with_content(identifier, source),
                 index: index.map(|index| ByteOffsetSnapshot::with_content(index, source)),
-                body: body.into_iter().map(|node| node_to_snapshot(node, source)).collect(),
+                body: body
+                    .into_iter()
+                    .map(|node| node_to_snapshot(node, source))
+                    .collect(),
             },
             AstNode::Render { component, offset } => AstNodeSnapshot::Render {
                 content: &source[offset.range()],
@@ -565,10 +607,17 @@ mod tests {
                 offset: ByteOffsetSnapshot::with_content(offset, source),
                 property: ByteOffsetSnapshot::with_content(property, source),
             },
-            AstNode::FunctionCall { args, function, offset } => AstNodeSnapshot::FunctionCall {
+            AstNode::FunctionCall {
+                args,
+                function,
+                offset,
+            } => AstNodeSnapshot::FunctionCall {
                 function: Box::new(node_to_snapshot(*function, source)),
                 offset: ByteOffsetSnapshot::with_content(offset, source),
-                args: args.into_iter().map(|arg| node_to_snapshot(arg, source)).collect(),
+                args: args
+                    .into_iter()
+                    .map(|arg| node_to_snapshot(arg, source))
+                    .collect(),
                 content: &source[offset.range()],
             },
             AstNode::IfStatement {
@@ -578,8 +627,19 @@ mod tests {
                 offset,
             } => AstNodeSnapshot::IfStatement {
                 condition: Box::new(node_to_snapshot(*condition, source)),
-                truthy: truthy.into_iter().map(|node| node_to_snapshot(node, source)).collect(),
-                falsy: falsy.into_iter().map(|node| node_to_snapshot(node, source)).collect(),
+                truthy: truthy
+                    .into_iter()
+                    .map(|node| node_to_snapshot(node, source))
+                    .collect(),
+                falsy: falsy
+                    .into_iter()
+                    .map(|node| node_to_snapshot(node, source))
+                    .collect(),
+                offset: ByteOffsetSnapshot::with_content(offset, source),
+                content: &source[offset.range()],
+            },
+            AstNode::Not { offset, expr } => AstNodeSnapshot::Not {
+                expr: Box::new(node_to_snapshot(*expr, source)),
                 offset: ByteOffsetSnapshot::with_content(offset, source),
                 content: &source[offset.range()],
             },
@@ -754,7 +814,12 @@ mod tests {
 
     #[test]
     fn test_parse_if_null_check() {
-        let source = ["{{ if page.title }}", "<title>{{ page.title }}</title>", "{{ end }}"].join("\n");
+        let source = [
+            "{{ if page.title }}",
+            "<title>{{ page.title }}</title>",
+            "{{ end }}",
+        ]
+        .join("\n");
         let source = Arc::new(source);
 
         let lexer = Lexer::new(source.clone());
@@ -822,5 +887,66 @@ mod tests {
             .collect::<Vec<_>>();
 
         insta::assert_debug_snapshot!(ast);
+    }
+
+    #[test]
+    fn test_parse_binary_expressions() -> miette::Result<()> {
+        let source = [
+            "{{ something ?? other_thing }}",
+            "{{ something and other_thing }}",
+            "{{ something or other_thing }}",
+            "{{ something == other_thing }}",
+            "{{ something != other_thing }}",
+            "{{ something < other_thing }}",
+            "{{ something <= other_thing }}",
+            "{{ something > other_thing }}",
+            "{{ something >= other_thing }}",
+            "{{ something - other_thing }}",
+            "{{ something + other_thing }}",
+            "{{ something * other_thing }}",
+            "{{ something / other_thing }}",
+            "{{ something % other_thing }}",
+            "{{ something % other_thing }}",
+        ]
+        .join("");
+        let source = Arc::new(source);
+
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all()?;
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_parse_unary_expressions() -> miette::Result<()> {
+        let source = [
+            "{{ not something and other_thing }}",
+            "{{ not (something and other_thing) }}",
+        ]
+        .join("");
+        let source = Arc::new(source);
+
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all()?;
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
+
+        Ok(())
     }
 }

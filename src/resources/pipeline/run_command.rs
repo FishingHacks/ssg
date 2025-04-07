@@ -49,7 +49,11 @@ pub async fn run_commands_pipeline(
         rootdir: &config.root_dir,
     };
     for (i, entry) in pipeline.iter().enumerate() {
-        println!("Running {name} pipeline (Step {}/{})", i + 1, pipeline.len());
+        println!(
+            "Running {name} pipeline (Step {}/{})",
+            i + 1,
+            pipeline.len()
+        );
         if let Err(e) = run_cmd(entry, vars, &[]).await {
             return Err(ContextPipelineError::new(name, None, i, e));
         }
@@ -91,8 +95,11 @@ impl RunCommand {
             rootdir: &config.root_dir,
         };
 
-        let input =
-            if let RunCommandInput::Stdin = self.input { tokio::fs::read(input).await? } else { const { Vec::new() } };
+        let input = if let RunCommandInput::Stdin = self.input {
+            tokio::fs::read(input).await?
+        } else {
+            const { Vec::new() }
+        };
         let stdout = run_cmd(&self.command, vars, &input).await?;
         if let RunCommandOutput::Stdout = self.output {
             tokio::fs::write(output, stdout).await?
@@ -101,7 +108,11 @@ impl RunCommand {
     }
 }
 
-async fn run_cmd(command: &PipelineCommand, vars: Vars<'_>, input: &[u8]) -> Result<Vec<u8>, PipelineError> {
+async fn run_cmd(
+    command: &PipelineCommand,
+    vars: Vars<'_>,
+    input: &[u8],
+) -> Result<Vec<u8>, PipelineError> {
     let mut cmd = Command::new(&command.cmd);
     cmd.args(command.arguments.iter().map(move |v| replace_vars(v, vars)));
     cmd.stdin(Stdio::piped());

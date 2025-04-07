@@ -1,0 +1,72 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    BinaryOp {
+        left: Not {
+            expr: Identifier {
+                offset: ByteOffsetSnapshot {
+                    end: 16,
+                    start: 7,
+                    content: "something",
+                },
+                content: "something",
+            },
+            offset: ByteOffsetSnapshot {
+                end: 16,
+                start: 3,
+                content: "not something",
+            },
+            content: "not something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 32,
+                start: 21,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 32,
+            start: 3,
+            content: "not something and other_thing",
+        },
+        content: "not something and other_thing",
+        operator: And,
+    },
+    Not {
+        expr: BinaryOp {
+            left: Identifier {
+                offset: ByteOffsetSnapshot {
+                    end: 52,
+                    start: 43,
+                    content: "something",
+                },
+                content: "something",
+            },
+            right: Identifier {
+                offset: ByteOffsetSnapshot {
+                    end: 68,
+                    start: 57,
+                    content: "other_thing",
+                },
+                content: "other_thing",
+            },
+            offset: ByteOffsetSnapshot {
+                end: 68,
+                start: 43,
+                content: "something and other_thing",
+            },
+            content: "something and other_thing",
+            operator: And,
+        },
+        offset: ByteOffsetSnapshot {
+            end: 68,
+            start: 38,
+            content: "not (something and other_thing",
+        },
+        content: "not (something and other_thing",
+    },
+]

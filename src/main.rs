@@ -4,14 +4,13 @@ mod resources;
 mod scripting;
 mod templates;
 
-use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
 use config::{ConfigReadError, SiteConfig};
 use content::ContentParseError;
-use miette::{Diagnostic, miette};
+use miette::Diagnostic;
 use resources::ContextPipelineError;
 use templates::TemplateError;
 use thiserror::Error;
@@ -37,11 +36,6 @@ enum Commands {
         #[arg(short, long)]
         path: Option<PathBuf>,
     },
-}
-
-#[derive(Debug, Default)]
-struct BuildStep {
-    contents: HashMap<PathBuf, Arc<String>>,
 }
 
 #[derive(Debug, Error, Diagnostic)]
@@ -83,9 +77,8 @@ async fn main() -> miette::Result<()> {
     Ok(())
 }
 
-async fn build(config: SiteConfig) -> miette::Result<BuildStep, BuildError> {
+async fn build(config: SiteConfig) -> miette::Result<(), BuildError> {
     let config = Arc::new(config);
-    let mut build_step = BuildStep::default();
     // ensure output dir exists
     std::fs::create_dir_all(&config.out_dir)?;
 
@@ -95,14 +88,18 @@ async fn build(config: SiteConfig) -> miette::Result<BuildStep, BuildError> {
     let templates = templates::load_templates(&config).await?;
     let pages = content::parse_content(&config).await?;
 
-    let resource_handles = futures::future::join_all(resources.iter().map(PathBuf::from).map(|path| {
-        let config = config.clone();
-        tokio::spawn(async move {
-            let config = config;
-            config.pipeline_cfg.run_pipeline_for_file(path, &config).await
-        })
-    }))
-    .await;
+    let resource_handles =
+        futures::future::join_all(resources.iter().map(PathBuf::from).map(|path| {
+            let config = config.clone();
+            tokio::spawn(async move {
+                let config = config;
+                config
+                    .pipeline_cfg
+                    .run_pipeline_for_file(path, &config)
+                    .await
+            })
+        }))
+        .await;
 
     for handle in resource_handles {
         handle??;
@@ -110,5 +107,5 @@ async fn build(config: SiteConfig) -> miette::Result<BuildStep, BuildError> {
 
     config.pipeline_cfg.run_post_build_pipeline(&config).await?;
 
-    Ok(build_step)
+    Ok(())
 }

@@ -1,0 +1,381 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 12,
+                start: 3,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 27,
+                start: 16,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 27,
+            start: 3,
+            content: "something ?? other_thing",
+        },
+        content: "something ?? other_thing",
+        operator: Either,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 42,
+                start: 33,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 58,
+                start: 47,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 58,
+            start: 33,
+            content: "something and other_thing",
+        },
+        content: "something and other_thing",
+        operator: And,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 73,
+                start: 64,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 88,
+                start: 77,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 88,
+            start: 64,
+            content: "something or other_thing",
+        },
+        content: "something or other_thing",
+        operator: Or,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 103,
+                start: 94,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 118,
+                start: 107,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 118,
+            start: 94,
+            content: "something == other_thing",
+        },
+        content: "something == other_thing",
+        operator: Equal,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 133,
+                start: 124,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 148,
+                start: 137,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 148,
+            start: 124,
+            content: "something != other_thing",
+        },
+        content: "something != other_thing",
+        operator: NotEqual,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 163,
+                start: 154,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 177,
+                start: 166,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 177,
+            start: 154,
+            content: "something < other_thing",
+        },
+        content: "something < other_thing",
+        operator: Lesser,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 192,
+                start: 183,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 207,
+                start: 196,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 207,
+            start: 183,
+            content: "something <= other_thing",
+        },
+        content: "something <= other_thing",
+        operator: LesserEqual,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 222,
+                start: 213,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 236,
+                start: 225,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 236,
+            start: 213,
+            content: "something > other_thing",
+        },
+        content: "something > other_thing",
+        operator: Greater,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 251,
+                start: 242,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 266,
+                start: 255,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 266,
+            start: 242,
+            content: "something >= other_thing",
+        },
+        content: "something >= other_thing",
+        operator: GreaterEqual,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 281,
+                start: 272,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 295,
+                start: 284,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 295,
+            start: 272,
+            content: "something - other_thing",
+        },
+        content: "something - other_thing",
+        operator: Minus,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 310,
+                start: 301,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 324,
+                start: 313,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 324,
+            start: 301,
+            content: "something + other_thing",
+        },
+        content: "something + other_thing",
+        operator: Plus,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 339,
+                start: 330,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 353,
+                start: 342,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 353,
+            start: 330,
+            content: "something * other_thing",
+        },
+        content: "something * other_thing",
+        operator: Mul,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 368,
+                start: 359,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 382,
+                start: 371,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 382,
+            start: 359,
+            content: "something / other_thing",
+        },
+        content: "something / other_thing",
+        operator: Div,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 397,
+                start: 388,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 411,
+                start: 400,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 411,
+            start: 388,
+            content: "something % other_thing",
+        },
+        content: "something % other_thing",
+        operator: Modulo,
+    },
+    BinaryOp {
+        left: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 426,
+                start: 417,
+                content: "something",
+            },
+            content: "something",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 440,
+                start: 429,
+                content: "other_thing",
+            },
+            content: "other_thing",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 440,
+            start: 417,
+            content: "something % other_thing",
+        },
+        content: "something % other_thing",
+        operator: Modulo,
+    },
+]

@@ -127,7 +127,13 @@ impl Pipeline {
     ) -> Result<PathBuf, ContextPipelineError> {
         assert!(path.is_relative());
         let mut outpath = config.out_dir.join(&path);
-        match tokio::fs::create_dir_all(outpath.parent().expect("outpath has to have a parent directory")).await {
+        match tokio::fs::create_dir_all(
+            outpath
+                .parent()
+                .expect("outpath has to have a parent directory"),
+        )
+        .await
+        {
             Ok(_) => {}
             Err(e) => return Err(ContextPipelineError::new(name, Some(path), 0, e)),
         }
@@ -207,7 +213,9 @@ impl Display for IndexedResources {
             Display::fmt(&f2.display(), f)?;
             f.write_char('\n')?;
         }
-        f.write_str("-------------------------------------------------------------------------------------")
+        f.write_str(
+            "-------------------------------------------------------------------------------------",
+        )
     }
 }
 
@@ -228,21 +236,37 @@ impl PipelineConfig {
         Some(pipeline.strip_prefix("pipeline.").unwrap_or(extension))
     }
 
-    pub async fn run_pre_build_pipeline(&self, config: &SiteConfig) -> Result<(), ContextPipelineError> {
+    pub async fn run_pre_build_pipeline(
+        &self,
+        config: &SiteConfig,
+    ) -> Result<(), ContextPipelineError> {
         run_commands_pipeline(config, &self.pre_build, "pre-build").await
     }
 
-    pub async fn run_post_build_pipeline(&self, config: &SiteConfig) -> Result<(), ContextPipelineError> {
+    pub async fn run_post_build_pipeline(
+        &self,
+        config: &SiteConfig,
+    ) -> Result<(), ContextPipelineError> {
         run_commands_pipeline(config, &self.post_build, "post-build").await
     }
 
-    pub async fn run_pipeline_for_file(&self, path: PathBuf, config: &SiteConfig) -> Result<(), ContextPipelineError> {
+    pub async fn run_pipeline_for_file(
+        &self,
+        path: PathBuf,
+        config: &SiteConfig,
+    ) -> Result<(), ContextPipelineError> {
         let Some(pipeline) = self.pipeline_for_file(&path) else {
-            println!("Warning: no pipeline registered for file {}", path.display());
+            println!(
+                "Warning: no pipeline registered for file {}",
+                path.display()
+            );
             return Ok(());
         };
         let Some((name, pipeline)) = self.single_file_pipelines.get_key_value(pipeline) else {
-            println!("Warning: no pipeline registered for file {}", path.display());
+            println!(
+                "Warning: no pipeline registered for file {}",
+                path.display()
+            );
             return Ok(());
         };
         pipeline.run_pipeline(path, name, config).await?;
@@ -257,7 +281,12 @@ impl PipelineConfig {
         resources
     }
 
-    fn inner_index_resources(&self, config: &SiteConfig, resources: &mut IndexedResources, path: &Path) {
+    fn inner_index_resources(
+        &self,
+        config: &SiteConfig,
+        resources: &mut IndexedResources,
+        path: &Path,
+    ) {
         let Ok(dir_entries) = std::fs::read_dir(path) else { return };
         let path = path.strip_prefix(&config.root_dir).unwrap_or(path);
         for entry in dir_entries {

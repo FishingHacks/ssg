@@ -35,7 +35,9 @@ pub struct PageTemplate {
     ast: scripting::Ast,
 }
 
-pub async fn load_templates(config: &SiteConfig) -> Result<HashMap<PathBuf, PageTemplate>, TemplateError> {
+pub async fn load_templates(
+    config: &SiteConfig,
+) -> Result<HashMap<PathBuf, PageTemplate>, TemplateError> {
     if !config.templates_dir.exists() {
         return Err(TemplateError::NoTemplates);
     }

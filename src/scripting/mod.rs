@@ -143,6 +143,10 @@ pub enum AstNode {
         falsy: Vec<AstNode>,
         offset: ByteOffset,
     },
+    Not {
+        expr: Box<AstNode>,
+        offset: ByteOffset,
+    },
 }
 
 #[derive(Debug)]
@@ -153,11 +157,21 @@ pub enum Operator {
     LesserEqual,
     Greater,
     Lesser,
+
+    Either,
+    Not,
+    And,
+    Or,
+
     LeftParen,
     RightParen,
-    Minus,
+    Dot,
+
     Plus,
+    Minus,
     Mul,
+    Div,
+    Modulo,
 }
 
 impl Operator {
@@ -174,8 +188,17 @@ impl Operator {
             Token::Minus(_) => Operator::Minus,
             Token::Plus(_) => Operator::Plus,
             Token::Mul(_) => Operator::Mul,
+            Token::Div(_) => Operator::Div,
+            Token::Modulo(_) => Operator::Modulo,
+            Token::Dot(_) => Operator::Dot,
 
-            _ => unreachable!(),
+            Token::Bang(_) => Operator::Not,
+            Token::And(_) => Operator::And,
+            Token::Or(_) => Operator::Or,
+            Token::Either(_) => Operator::Either,
+            Token::Not(_) => Operator::Not,
+
+            t => unreachable!("{t:?}"),
         }
     }
 }
@@ -189,6 +212,7 @@ impl AstNode {
             | AstNode::IntLiteral(offset)
             | AstNode::FloatLiteral(offset) => *offset,
             AstNode::Block { offset, .. } => *offset,
+            AstNode::Not { offset, .. } => *offset,
             AstNode::Extend { offset, .. } => *offset,
             AstNode::Render { offset, .. } => *offset,
             AstNode::ForLoop { offset, .. } => *offset,

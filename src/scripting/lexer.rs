@@ -19,22 +19,29 @@ pub enum Token {
     StringLiteral(ByteOffset),
     Float(ByteOffset),
     Int(ByteOffset),
-
+    Comma(ByteOffset),
+    LeftParen(ByteOffset),
+    RightParen(ByteOffset),
     Assign(ByteOffset),
+    Dot(ByteOffset),
+
     Equal(ByteOffset),
     NotEqual(ByteOffset),
     GreaterEqual(ByteOffset),
     LesserEqual(ByteOffset),
     Greater(ByteOffset),
     Lesser(ByteOffset),
-    Dot(ByteOffset),
-    LeftParen(ByteOffset),
-    RightParen(ByteOffset),
+    Either(ByteOffset),
+    Bang(ByteOffset),
+    And(ByteOffset),
+    Or(ByteOffset),
+    Not(ByteOffset),
+
     Minus(ByteOffset),
     Plus(ByteOffset),
     Mul(ByteOffset),
-
-    Comma(ByteOffset),
+    Div(ByteOffset),
+    Modulo(ByteOffset),
 
     For(ByteOffset),
     In(ByteOffset),
@@ -63,6 +70,7 @@ impl Token {
             | Token::LesserEqual(byte_offset)
             | Token::Greater(byte_offset)
             | Token::Lesser(byte_offset)
+            | Token::Not(byte_offset)
             | Token::Dot(byte_offset)
             | Token::LeftParen(byte_offset)
             | Token::RightParen(byte_offset)
@@ -77,8 +85,14 @@ impl Token {
             | Token::Comma(byte_offset)
             | Token::Render(byte_offset)
             | Token::Slot(byte_offset)
+            | Token::Div(byte_offset)
             | Token::Mul(byte_offset)
             | Token::Extend(byte_offset)
+            | Token::Either(byte_offset)
+            | Token::Modulo(byte_offset)
+            | Token::And(byte_offset)
+            | Token::Or(byte_offset)
+            | Token::Bang(byte_offset)
             | Token::Int(byte_offset) => *byte_offset,
         }
     }
@@ -89,7 +103,6 @@ impl Token {
             Token::Plus(_)
                 | Token::Minus(_)
                 | Token::LeftParen(_)
-                | Token::RightParen(_)
                 | Token::Lesser(_)
                 | Token::LesserEqual(_)
                 | Token::Greater(_)
@@ -98,20 +111,12 @@ impl Token {
                 | Token::Equal(_)
                 | Token::Dot(_)
                 | Token::Mul(_)
-        )
-    }
-
-    pub fn is_keyword(&self) -> bool {
-        matches!(
-            self,
-            Token::For(_)
-                | Token::In(_)
-                | Token::If(_)
-                | Token::Render(_)
-                | Token::Extend(_)
-                | Token::Block(_)
-                | Token::Slot(_)
-                | Token::Else(_)
+                | Token::Div(_)
+                | Token::Modulo(_)
+                | Token::Either(_)
+                | Token::And(_)
+                | Token::Or(_)
+                | Token::Not(_)
         )
     }
 }
@@ -173,6 +178,9 @@ impl Lexer {
             "render" => Some(Token::Render(offset)),
             "slot" => Some(Token::Slot(offset)),
             "extend" => Some(Token::Extend(offset)),
+            "and" => Some(Token::And(offset)),
+            "or" => Some(Token::Or(offset)),
+            "not" => Some(Token::Not(offset)),
             _ => None,
         }
     }
@@ -182,7 +190,11 @@ impl Lexer {
         self.script_start = Some(self.cursor);
     }
 
-    fn lex_html(&mut self, curr: char, next: Option<char>) -> ControlFlow<Result<Token, ParsingError>, ()> {
+    fn lex_html(
+        &mut self,
+        curr: char,
+        next: Option<char>,
+    ) -> ControlFlow<Result<Token, ParsingError>, ()> {
         match (curr, next) {
             ('{', Some('{')) => {
                 self.mode = LexingMode::Script;
@@ -213,8 +225,12 @@ impl Lexer {
         }
     }
 
-    fn lex_script(&mut self, curr: char, next: Option<char>) -> ControlFlow<Result<Token, ParsingError>> {
-        match (curr, next) {
+    fn lex_script(
+        &mut self,
+        first: char,
+        second: Option<char>,
+    ) -> ControlFlow<Result<Token, ParsingError>> {
+        match (first, second) {
             (c, _) if c.is_whitespace() => {
                 self.advance_script(c.len_utf8());
                 ControlFlow::Continue(())
@@ -253,11 +269,19 @@ impl Lexer {
             }
             ('>', Some('=')) => {
                 self.advance_script(2);
-                ControlFlow::Break(Ok(Token::GreaterEqual((self.cursor - 2, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::GreaterEqual(
+                    (self.cursor - 2, self.cursor).into(),
+                )))
             }
             ('<', Some('=')) => {
                 self.advance_script(2);
-                ControlFlow::Break(Ok(Token::LesserEqual((self.cursor - 2, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::LesserEqual(
+                    (self.cursor - 2, self.cursor).into(),
+                )))
+            }
+            ('?', Some('?')) => {
+                self.advance_script(2);
+                ControlFlow::Break(Ok(Token::Either((self.cursor - 2, self.cursor).into())))
             }
             ('>', _) => {
                 self.advance_script(1);
@@ -279,6 +303,10 @@ impl Lexer {
                 self.advance_script(1);
                 ControlFlow::Break(Ok(Token::RightParen((self.cursor - 1, self.cursor).into())))
             }
+            ('+', _) => {
+                self.advance_script(1);
+                ControlFlow::Break(Ok(Token::Plus((self.cursor - 1, self.cursor).into())))
+            }
             ('-', _) => {
                 self.advance_script(1);
                 ControlFlow::Break(Ok(Token::Minus((self.cursor - 1, self.cursor).into())))
@@ -287,20 +315,24 @@ impl Lexer {
                 self.advance_script(1);
                 ControlFlow::Break(Ok(Token::Mul((self.cursor - 1, self.cursor).into())))
             }
+            ('/', _) => {
+                self.advance_script(1);
+                ControlFlow::Break(Ok(Token::Div((self.cursor - 1, self.cursor).into())))
+            }
+            ('%', _) => {
+                self.advance_script(1);
+                ControlFlow::Break(Ok(Token::Modulo((self.cursor - 1, self.cursor).into())))
+            }
             (',', _) => {
                 self.advance_script(1);
                 ControlFlow::Break(Ok(Token::Comma((self.cursor - 1, self.cursor).into())))
-            }
-            ('+', _) => {
-                self.advance_script(1);
-                ControlFlow::Break(Ok(Token::Plus((self.cursor - 1, self.cursor).into())))
             }
             ('"' | '\'', _) => {
                 self.cursor += 1;
                 let start = self.cursor;
                 let source = &self.source[self.cursor..];
 
-                let Some(length) = source.find(curr) else {
+                let Some(length) = source.find(first) else {
                     return ControlFlow::Break(Err(ParsingError {
                         src: self.source.clone(),
                         at: (start..self.source.len()).into(),
@@ -391,15 +423,15 @@ impl Iterator for Lexer {
             let source = &self.source[self.cursor..];
             let mut chars = source.chars().peekable();
 
-            let ch = chars.next()?;
-            let next = chars.peek().copied();
+            let first = chars.next()?;
+            let second = chars.peek().copied();
 
             match self.mode {
-                LexingMode::Html => match self.lex_html(ch, next) {
+                LexingMode::Html => match self.lex_html(first, second) {
                     ControlFlow::Continue(_) => continue,
                     ControlFlow::Break(token) => return Some(token),
                 },
-                LexingMode::Script => match self.lex_script(ch, next) {
+                LexingMode::Script => match self.lex_script(first, second) {
                     ControlFlow::Continue(_) => continue,
                     ControlFlow::Break(token) => return Some(token),
                 },
