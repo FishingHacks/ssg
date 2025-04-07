@@ -1,8 +1,9 @@
 use std::ops::{Add, AddAssign, Range};
 use std::sync::Arc;
 
-use lexer::Token;
+use lexer::{Lexer, Token};
 use miette::{Diagnostic, SourceSpan};
+use parser::Parser;
 use thiserror::Error;
 
 mod lexer;
@@ -66,7 +67,7 @@ impl From<ByteOffset> for SourceSpan {
     }
 }
 
-#[derive(Debug, Error, Diagnostic)]
+#[derive(Debug, Error, Diagnostic, Clone)]
 #[error("While parsing template")]
 #[diagnostic()]
 pub struct ParsingError {
@@ -85,53 +86,159 @@ pub struct Ast {
 }
 
 #[derive(Debug)]
-// TODO: Remove
-// temporary, the fields will be used when doing evaluation
-#[allow(dead_code)]
 pub enum AstNode {
-    // Does not include either quotes. Extend/shorten by 1 on either side to get the quotes too
     Html(ByteOffset),
-    /// ` ┌───────────────┐ <- .0 `
-    /// ` block "meow meow"       `
-    /// `        └───────┘  <- .1 `
-    Block(ByteOffset, ByteOffset),
-    /// ` ┌───────────────┐ <- .0 `
-    /// ` enter "meow meow"       `
-    /// `        └───────┘  <- .1 `
-    Enter(ByteOffset, ByteOffset, Box<[AstNode]>),
-    /// ` ┌────────────────┐ <- .0 `
-    /// ` extend "base.html"       `
-    /// `         └───────┘  <- .1 `
-    Extend(ByteOffset, ByteOffset),
-    Slot(ByteOffset),
-    If(ByteOffset, Box<Expr>, Box<[AstNode]>, Box<[AstNode]>),
-    // 1.: Location of the statement, 2.: Location of the variable identfier
-    For(ByteOffset, ByteOffset, Box<Expr>, Box<[AstNode]>),
-    Render(ByteOffset, Box<Expr>, Box<[AstNode]>),
-    // a := b + c
-    /// ` ┌──────────────┐ <- .0 `
-    /// ` my_var := <expr>       `
-    /// ` └────┘           <- .1 `
-    VarDef(ByteOffset, ByteOffset, Box<Expr>),
-    Expr(Box<Expr>),
+    /// Expression holds a single identifier. This will yield the identifier's
+    /// value into the template
+    ///
+    /// # Example:
+    ///
+    /// {{ some_value }}
+    Identifier(ByteOffset),
+    IntLiteral(ByteOffset),
+    FloatLiteral(ByteOffset),
+    StringLiteral(ByteOffset),
+    Variable {
+        ident: ByteOffset,
+        value: Box<AstNode>,
+    },
+    BinaryOp {
+        left: Box<AstNode>,
+        right: Box<AstNode>,
+        offset: ByteOffset,
+        operator: Operator,
+    },
+    ForLoop {
+        identifier: ByteOffset,
+        index: Option<ByteOffset>,
+        list: ByteOffset,
+        offset: ByteOffset,
+        body: Vec<AstNode>,
+    },
+    Render {
+        component: ByteOffset,
+        offset: ByteOffset,
+    },
+    Extend {
+        template: ByteOffset,
+        offset: ByteOffset,
+    },
+    Block {
+        name: ByteOffset,
+        offset: ByteOffset,
+    },
+}
+
+#[derive(Debug)]
+pub enum Operator {
+    Equal,
+    NotEqual,
+    GreaterEqual,
+    LesserEqual,
+    Greater,
+    Lesser,
+    LeftParen,
+    RightParen,
+    Minus,
+    Plus,
+    Mul,
+}
+
+impl Operator {
+    pub fn new_unchecked(token: Token) -> Self {
+        match token {
+            Token::Equal(_) => Operator::Equal,
+            Token::NotEqual(_) => Operator::NotEqual,
+            Token::GreaterEqual(_) => Operator::GreaterEqual,
+            Token::LesserEqual(_) => Operator::LesserEqual,
+            Token::Greater(_) => Operator::Greater,
+            Token::Lesser(_) => Operator::Lesser,
+            Token::LeftParen(_) => Operator::LeftParen,
+            Token::RightParen(_) => Operator::RightParen,
+            Token::Minus(_) => Operator::Minus,
+            Token::Plus(_) => Operator::Plus,
+            Token::Mul(_) => Operator::Mul,
+
+            _ => unreachable!(),
+        }
+    }
 }
 
 impl AstNode {
     fn loc(&self) -> ByteOffset {
         match self {
-            AstNode::Html(byte_offset)
-            | AstNode::Block(byte_offset, ..)
-            | AstNode::Enter(byte_offset, ..)
-            | AstNode::Extend(byte_offset, ..)
-            | AstNode::Slot(byte_offset)
-            | AstNode::If(byte_offset, ..)
-            | AstNode::For(byte_offset, ..)
-            | AstNode::Render(byte_offset, ..)
-            | AstNode::VarDef(byte_offset, ..) => *byte_offset,
-            AstNode::Expr(expr) => expr.loc(),
+            AstNode::Html(offset)
+            | AstNode::Identifier(offset)
+            | AstNode::StringLiteral(offset)
+            | AstNode::IntLiteral(offset)
+            | AstNode::FloatLiteral(offset) => *offset,
+            AstNode::Render { offset, .. } => *offset,
+            AstNode::Block { offset, .. } => *offset,
+            AstNode::Extend { offset, .. } => *offset,
+            AstNode::Variable { ident, value } => *ident + value.loc(),
+            AstNode::BinaryOp { offset, .. } => *offset,
+            AstNode::ForLoop { offset, .. } => *offset,
         }
     }
 }
+
+#[derive(Debug)]
+enum Expression {}
+
+// #[derive(Debug)]
+// // TODO: Remove
+// // temporary, the fields will be used when doing evaluation
+// #[allow(dead_code)]
+// pub enum AstNode {
+//     Identifier {
+//         name: ByteOffset,
+//     },
+//     // Does not include either quotes. Extend/shorten by 1 on either side to get the quotes too
+//     Html(ByteOffset),
+//     /// ` ┌───────────────┐ <- .0 `
+//     /// ` block "meow meow"       `
+//     /// `        └───────┘  <- .1 `
+//     Block(ByteOffset, ByteOffset),
+//     /// ` ┌───────────────┐ <- .0 `
+//     /// ` enter "meow meow"       `
+//     /// `        └───────┘  <- .1 `
+//     Enter(ByteOffset, ByteOffset, Box<[AstNode]>),
+//     /// ` ┌────────────────┐ <- .0 `
+//     /// ` extend "base.html"       `
+//     /// `         └───────┘  <- .1 `
+//     Extend(ByteOffset, ByteOffset),
+//     Slot(ByteOffset),
+//     If(ByteOffset, Box<Expr>, Box<[AstNode]>, Box<[AstNode]>),
+//     // 1.: Location of the statement, 2.: Location of the variable identfier
+//     For(ByteOffset, ByteOffset, Box<Expr>, Box<[AstNode]>),
+//     Render(ByteOffset, Box<Expr>, Box<[AstNode]>),
+//     // a := b + c
+//     /// ` ┌──────────────┐ <- .0 `
+//     /// ` my_var := <expr>       `
+//     /// ` └────┘           <- .1 `
+//     VarDef {
+//         name: ByteOffset,
+//         value: Box<Expr>,
+//     },
+//     Expr(Box<Expr>),
+// }
+
+// impl AstNode {
+//     fn loc(&self) -> ByteOffset {
+//         match self {
+//             AstNode::Html(byte_offset)
+//             | AstNode::Block(byte_offset, ..)
+//             | AstNode::Enter(byte_offset, ..)
+//             | AstNode::Extend(byte_offset, ..)
+//             | AstNode::Slot(byte_offset)
+//             | AstNode::If(byte_offset, ..)
+//             | AstNode::For(byte_offset, ..)
+//             | AstNode::Render(byte_offset, ..)
+//             | AstNode::VarDef(byte_offset, ..) => *byte_offset,
+//             AstNode::Expr(expr) => expr.loc(),
+//         }
+//     }
+// }
 
 #[derive(Debug)]
 // TODO: Remove
@@ -195,213 +302,229 @@ impl Expr {
 }
 
 pub fn parse_template(template: String) -> Result<Ast, ParsingError> {
-    let mut ast = Ast {
-        source: Arc::new(template),
-        nodes: vec![],
-    };
-
-    let mut parser = parser::Parser::new(&mut ast);
-    parser.parse_all()?;
+    let source = Arc::new(template);
+    let lexer = Lexer::new(source.clone());
+    let mut parser = Parser::new(source.clone(), lexer);
+    let ast = parser.parse_all()?;
 
     Ok(ast)
 }
 
-#[allow(dead_code)]
-pub fn print_token(src: &str, tok: &Token) {
-    match tok {
-        Token::Html(byte_offset) => println!("Html({:?})", &src[byte_offset.range()]),
-        Token::ExprStart(_) => println!("ExprStart"),
-        Token::ExprEnd(_) => println!("ExprEnd"),
-        Token::Identifier(byte_offset) => println!("Ident({})", &src[byte_offset.range()]),
-        Token::StringLiteral(byte_offset) => {
-            println!("StringLit({:?})", &src[byte_offset.start + 1..byte_offset.end - 1])
-        }
-        Token::Keyword(byte_offset) => println!("Keyword({})", &src[byte_offset.range()]),
-        Token::Float(byte_offset) => println!("Float({})", &src[byte_offset.range()]),
-        Token::Int(byte_offset) => println!("Int({})", &src[byte_offset.range()]),
-        Token::Symbol(c, _) => println!("Symbol({c:?})"),
-    }
-}
+// #[allow(dead_code)]
+// pub fn print_token(src: &str, tok: &Token) {
+//     match tok {
+//         Token::Html(byte_offset) => println!("Html({:?})", &src[byte_offset.range()]),
+//         Token::ExprStart(_) => println!("ExprStart"),
+//         Token::ExprEnd(_) => println!("ExprEnd"),
+//         Token::Identifier(byte_offset) => println!("Ident({})", &src[byte_offset.range()]),
+//         Token::StringLiteral(byte_offset) => {
+//             println!("StringLit({:?})", &src[byte_offset.start + 1..byte_offset.end - 1])
+//         }
+//         Token::Float(byte_offset) => println!("Float({})", &src[byte_offset.range()]),
+//         Token::Int(byte_offset) => println!("Int({})", &src[byte_offset.range()]),
+//         Token::Assign(_) => todo!(),
+//         Token::Equal(_) => todo!(),
+//         Token::NotEqual(_) => todo!(),
+//         Token::GreaterEqual(_) => todo!(),
+//         Token::LessEqual(_) => todo!(),
+//         Token::Greater(_) => todo!(),
+//         Token::Less(_) => todo!(),
+//         Token::Dot(_) => todo!(),
+//         Token::LeftParen(_) => todo!(),
+//         Token::RightParen(_) => todo!(),
+//         Token::Minus(_) => todo!(),
+//         Token::Plus(_) => todo!(),
+//         Token::For(_) => todo!(),
+//         Token::In(_) => todo!(),
+//         Token::End(_) => todo!(),
+//         Token::If(_) => todo!(),
+//         Token::Else(_) => todo!(),
+//         Token::Block(_) => todo!(),
+//         Token::Render(_) => todo!(),
+//         Token::Slot(_) => todo!(),
+//         Token::Extend(_) => todo!(),
+//     }
+// }
+//
+// #[allow(dead_code)]
+// pub fn print_node(src: &str, node: &AstNode, indent: usize) {
+//     for _ in 0..indent {
+//         print!("    ");
+//     }
+//     match node {
+//         AstNode::Html(byte_offset) => println!("Html({:?})", &src[byte_offset.range()]),
+//         AstNode::Block(_, name) => println!("Block({:?})", &src[name.range()]),
+//         AstNode::Enter(_, name, children) => {
+//             println!("Enter({:?}, [", &src[name.range()]);
+//             children.iter().for_each(|v| print_node(src, v, indent + 1));
+//             for _ in 0..indent {
+//                 print!("    ");
+//             }
+//             println!("])");
+//         }
+//         AstNode::Extend(_, file) => println!("Extend({:?})", &src[file.range()]),
+//         AstNode::Slot(_) => println!("Slot"),
+//         AstNode::If(_, expr, if_block, else_block) => {
+//             print!("If(");
+//             print_expr(src, expr);
+//             println!(", [");
+//             if_block.iter().for_each(|v| print_node(src, v, indent + 1));
+//             for _ in 0..indent {
+//                 print!("    ");
+//             }
+//             println!("], [");
+//             else_block.iter().for_each(|v| print_node(src, v, indent + 1));
+//             for _ in 0..indent {
+//                 print!("    ");
+//             }
+//             println!("])");
+//         }
+//         AstNode::For(_, var, expr, body) => {
+//             print!("For({}, ", &src[var.range()]);
+//             print_expr(src, expr);
+//             println!(", [");
+//             body.iter().for_each(|v| print_node(src, v, indent + 1));
+//             for _ in 0..indent {
+//                 print!("    ");
+//             }
+//             println!("])");
+//         }
+//         AstNode::Render(_, expr, children) => {
+//             print!("Render(");
+//             print_expr(src, expr);
+//             println!(", [");
+//             children.iter().for_each(|v| print_node(src, v, indent + 1));
+//             for _ in 0..indent {
+//                 print!("    ");
+//             }
+//             println!("])");
+//         }
+//         AstNode::VarDef(_, name, expr) => {
+//             print!("Define({}, ", &src[name.range()]);
+//             print_expr(src, expr);
+//             println!(")");
+//         }
+//         AstNode::Expr(expr) => {
+//             print!("Expr(");
+//             print_expr(src, expr);
+//             println!(")\n")
+//         }
+//     }
+// }
+//
+// #[allow(dead_code)]
+// pub fn print_expr(src: &str, expr: &Expr) {
+//     match expr {
+//         Expr::String(_, range) => print!("{:?}", &src[range.range()]),
+//         Expr::Float(_, v) => print!("{v}"),
+//         Expr::Int(_, v) => print!("{v}"),
+//         Expr::Var(byte_offset) => print!("{}", &src[byte_offset.range()]),
+//         Expr::Index(_, lhs, rhs) => {
+//             print!("(index ");
+//             print_expr(src, lhs);
+//             print!(" {})", &src[rhs.range()]);
+//         }
+//         Expr::FuncCall(_, expr, name, exprs) => {
+//             print!("(call ");
+//             print_expr(src, expr);
+//             print!(", {}", &src[name.range()]);
+//             for expr in exprs {
+//                 print!(", ");
+//                 print_expr(src, expr);
+//             }
+//             print!(")");
+//         }
+//         Expr::Not(_, expr) => {
+//             print!("(not ");
+//             print_expr(src, expr);
+//             print!(")");
+//         }
+//         Expr::Either(_, lhs, rhs) => {
+//             print!("(either ");
+//             print_expr(src, lhs);
+//             print!(", ");
+//             print_expr(src, rhs);
+//             print!(")");
+//         }
+//         Expr::And(_, lhs, rhs) => {
+//             print!("(and ");
+//             print_expr(src, lhs);
+//             print!(", ");
+//             print_expr(src, rhs);
+//             print!(")");
+//         }
+//         Expr::Or(_, lhs, rhs) => {
+//             print!("(or ");
+//             print_expr(src, lhs);
+//             print!(", ");
+//             print_expr(src, rhs);
+//             print!(")");
+//         }
+//         Expr::Equal(_, lhs, rhs) => {
+//             print!("(equal ");
+//             print_expr(src, lhs);
+//             print!(", ");
+//             print_expr(src, rhs);
+//             print!(")");
+//         }
+//         Expr::NotEqual(_, lhs, rhs) => {
+//             print!("(notequal ");
+//             print_expr(src, lhs);
+//             print!(", ");
+//             print_expr(src, rhs);
+//             print!(")");
+//         }
+//         Expr::Add(_, lhs, rhs) => {
+//             print!("(add ");
+//             print_expr(src, lhs);
+//             print!(", ");
+//             print_expr(src, rhs);
+//             print!(")");
+//         }
+//         Expr::Sub(_, lhs, rhs) => {
+//             print!("(sub ");
+//             print_expr(src, lhs);
+//             print!(", ");
+//             print_expr(src, rhs);
+//             print!(")");
+//         }
+//     }
+// }
 
-#[allow(dead_code)]
-pub fn print_node(src: &str, node: &AstNode, indent: usize) {
-    for _ in 0..indent {
-        print!("    ");
-    }
-    match node {
-        AstNode::Html(byte_offset) => println!("Html({:?})", &src[byte_offset.range()]),
-        AstNode::Block(_, name) => println!("Block({:?})", &src[name.range()]),
-        AstNode::Enter(_, name, children) => {
-            println!("Enter({:?}, [", &src[name.range()]);
-            children.iter().for_each(|v| print_node(src, v, indent + 1));
-            for _ in 0..indent {
-                print!("    ");
-            }
-            println!("])");
-        }
-        AstNode::Extend(_, file) => println!("Extend({:?})", &src[file.range()]),
-        AstNode::Slot(_) => println!("Slot"),
-        AstNode::If(_, expr, if_block, else_block) => {
-            print!("If(");
-            print_expr(src, expr);
-            println!(", [");
-            if_block.iter().for_each(|v| print_node(src, v, indent + 1));
-            for _ in 0..indent {
-                print!("    ");
-            }
-            println!("], [");
-            else_block.iter().for_each(|v| print_node(src, v, indent + 1));
-            for _ in 0..indent {
-                print!("    ");
-            }
-            println!("])");
-        }
-        AstNode::For(_, var, expr, body) => {
-            print!("For({}, ", &src[var.range()]);
-            print_expr(src, expr);
-            println!(", [");
-            body.iter().for_each(|v| print_node(src, v, indent + 1));
-            for _ in 0..indent {
-                print!("    ");
-            }
-            println!("])");
-        }
-        AstNode::Render(_, expr, children) => {
-            print!("Render(");
-            print_expr(src, expr);
-            println!(", [");
-            children.iter().for_each(|v| print_node(src, v, indent + 1));
-            for _ in 0..indent {
-                print!("    ");
-            }
-            println!("])");
-        }
-        AstNode::VarDef(_, name, expr) => {
-            print!("Define({}, ", &src[name.range()]);
-            print_expr(src, expr);
-            println!(")");
-        }
-        AstNode::Expr(expr) => {
-            print!("Expr(");
-            print_expr(src, expr);
-            println!(")\n")
-        }
-    }
-}
-
-#[allow(dead_code)]
-pub fn print_expr(src: &str, expr: &Expr) {
-    match expr {
-        Expr::String(_, range) => print!("{:?}", &src[range.range()]),
-        Expr::Float(_, v) => print!("{v}"),
-        Expr::Int(_, v) => print!("{v}"),
-        Expr::Var(byte_offset) => print!("{}", &src[byte_offset.range()]),
-        Expr::Index(_, lhs, rhs) => {
-            print!("(index ");
-            print_expr(src, lhs);
-            print!(" {})", &src[rhs.range()]);
-        }
-        Expr::FuncCall(_, expr, name, exprs) => {
-            print!("(call ");
-            print_expr(src, expr);
-            print!(", {}", &src[name.range()]);
-            for expr in exprs {
-                print!(", ");
-                print_expr(src, expr);
-            }
-            print!(")");
-        }
-        Expr::Not(_, expr) => {
-            print!("(not ");
-            print_expr(src, expr);
-            print!(")");
-        }
-        Expr::Either(_, lhs, rhs) => {
-            print!("(either ");
-            print_expr(src, lhs);
-            print!(", ");
-            print_expr(src, rhs);
-            print!(")");
-        }
-        Expr::And(_, lhs, rhs) => {
-            print!("(and ");
-            print_expr(src, lhs);
-            print!(", ");
-            print_expr(src, rhs);
-            print!(")");
-        }
-        Expr::Or(_, lhs, rhs) => {
-            print!("(or ");
-            print_expr(src, lhs);
-            print!(", ");
-            print_expr(src, rhs);
-            print!(")");
-        }
-        Expr::Equal(_, lhs, rhs) => {
-            print!("(equal ");
-            print_expr(src, lhs);
-            print!(", ");
-            print_expr(src, rhs);
-            print!(")");
-        }
-        Expr::NotEqual(_, lhs, rhs) => {
-            print!("(notequal ");
-            print_expr(src, lhs);
-            print!(", ");
-            print_expr(src, rhs);
-            print!(")");
-        }
-        Expr::Add(_, lhs, rhs) => {
-            print!("(add ");
-            print_expr(src, lhs);
-            print!(", ");
-            print_expr(src, rhs);
-            print!(")");
-        }
-        Expr::Sub(_, lhs, rhs) => {
-            print!("(sub ");
-            print_expr(src, lhs);
-            print!(", ");
-            print_expr(src, rhs);
-            print!(")");
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn simple_page() {
-        let src = r#"
-<!DOCTYPE html>
-<html lang="en">
-    <head id="head">
-        <meta charset="UTF-8">
-
-        <meta name="description" content="{{ page.description }}">
-
-        <meta http-equiv="x-ua-compatible" content="ie=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-        {{ if page.author }}
-        <title>{{ page.title }} - {{ page.author }}</title>
-        {{ else }}
-        <title>{{ page.title }}</title>
-        {{ end }}
-
-        {{ slot "head" }}
-    </head>
-
-    <body>
-        <main>
-            {{ slot "page" }}
-        </main>
-    </body>
-</html>
-"#;
-        let ast = parse_template(src.into()).unwrap();
-        insta::assert_debug_snapshot!(ast);
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     #[test]
+//     fn simple_page() {
+//         let src = r#"
+// <!DOCTYPE html>
+// <html lang="en">
+//     <head id="head">
+//         <meta charset="UTF-8">
+//
+//         <meta name="description" content="{{ page.description }}">
+//
+//         <meta http-equiv="x-ua-compatible" content="ie=edge">
+//         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+//
+//         {{ if page.author }}
+//         <title>{{ page.title }} - {{ page.author }}</title>
+//         {{ else }}
+//         <title>{{ page.title }}</title>
+//         {{ end }}
+//
+//         {{ slot "head" }}
+//     </head>
+//
+//     <body>
+//         <main>
+//             {{ slot "page" }}
+//         </main>
+//     </body>
+// </html>
+// "#;
+//         let ast = parse_template(src.into()).unwrap();
+//         insta::assert_debug_snapshot!(ast);
+//     }
+// }

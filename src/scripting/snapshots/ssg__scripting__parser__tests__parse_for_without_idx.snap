@@ -1,0 +1,49 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    ForLoop {
+        identifier: ByteOffset {
+            start: 7,
+            end: 10,
+        },
+        index: None,
+        list: ByteOffset {
+            start: 14,
+            end: 18,
+        },
+        offset: ByteOffset {
+            start: 3,
+            end: 18,
+        },
+        content: "for tag in tags",
+        body: [
+            Html {
+                offset: ByteOffset {
+                    start: 21,
+                    end: 63,
+                },
+                content: "\n<div>\n  <span>Hello World!</span>\n</div>\n",
+            },
+            Render {
+                component: ByteOffset {
+                    start: 74,
+                    end: 85,
+                },
+                offset: ByteOffset {
+                    start: 66,
+                    end: 85,
+                },
+                content: "render \"button.html",
+            },
+            Html {
+                offset: ByteOffset {
+                    start: 89,
+                    end: 132,
+                },
+                content: "\n<div>\n  <span>Hello Another</span>\n</div>\n",
+            },
+        ],
+    },
+]

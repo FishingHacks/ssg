@@ -1,0 +1,13 @@
+{{ extend "_base.html" }}
+
+{{ block "head" }}
+<link rel="stylesheet" href="{{ site.assets.get('css/home.css') }}" />
+{{ end }}
+
+{{ block "page" }}
+<main>
+    <div>
+        {{ render page.content }}
+    </div>
+</main>
+{{ end }}

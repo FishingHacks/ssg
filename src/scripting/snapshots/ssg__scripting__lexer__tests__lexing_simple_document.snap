@@ -13,7 +13,7 @@ expression: tokens
         content: "<!DOCTYPE html>\n<html lang=\"en\">\n  <head id=\"head\">\n    <meta charset=\"UTF-8\">\n    <meta name=\"description\" content=\"",
     },
     TokenSnapshot {
-        token: ExprStart(
+        token: ScriptStart(
             ByteOffset {
                 start: 117,
                 end: 119,
@@ -31,8 +31,7 @@ expression: tokens
         content: "page",
     },
     TokenSnapshot {
-        token: Symbol(
-            '.',
+        token: Dot(
             ByteOffset {
                 start: 124,
                 end: 125,
@@ -50,7 +49,7 @@ expression: tokens
         content: "description",
     },
     TokenSnapshot {
-        token: ExprEnd(
+        token: ScriptEnd(
             ByteOffset {
                 start: 137,
                 end: 139,
@@ -68,7 +67,7 @@ expression: tokens
         content: "\">\n\n    ",
     },
     TokenSnapshot {
-        token: ExprStart(
+        token: ScriptStart(
             ByteOffset {
                 start: 147,
                 end: 149,
@@ -77,7 +76,7 @@ expression: tokens
         content: "{{",
     },
     TokenSnapshot {
-        token: Keyword(
+        token: If(
             ByteOffset {
                 start: 150,
                 end: 152,
@@ -95,8 +94,7 @@ expression: tokens
         content: "page",
     },
     TokenSnapshot {
-        token: Symbol(
-            '.',
+        token: Dot(
             ByteOffset {
                 start: 157,
                 end: 158,
@@ -114,7 +112,7 @@ expression: tokens
         content: "author",
     },
     TokenSnapshot {
-        token: ExprEnd(
+        token: ScriptEnd(
             ByteOffset {
                 start: 165,
                 end: 167,
@@ -132,7 +130,7 @@ expression: tokens
         content: "\n    <title>",
     },
     TokenSnapshot {
-        token: ExprStart(
+        token: ScriptStart(
             ByteOffset {
                 start: 179,
                 end: 181,
@@ -150,8 +148,7 @@ expression: tokens
         content: "page",
     },
     TokenSnapshot {
-        token: Symbol(
-            '.',
+        token: Dot(
             ByteOffset {
                 start: 186,
                 end: 187,
@@ -169,7 +166,7 @@ expression: tokens
         content: "title",
     },
     TokenSnapshot {
-        token: ExprEnd(
+        token: ScriptEnd(
             ByteOffset {
                 start: 193,
                 end: 195,
@@ -187,7 +184,7 @@ expression: tokens
         content: " - ",
     },
     TokenSnapshot {
-        token: ExprStart(
+        token: ScriptStart(
             ByteOffset {
                 start: 198,
                 end: 200,
@@ -205,8 +202,7 @@ expression: tokens
         content: "page",
     },
     TokenSnapshot {
-        token: Symbol(
-            '.',
+        token: Dot(
             ByteOffset {
                 start: 205,
                 end: 206,
@@ -224,7 +220,7 @@ expression: tokens
         content: "author",
     },
     TokenSnapshot {
-        token: ExprEnd(
+        token: ScriptEnd(
             ByteOffset {
                 start: 213,
                 end: 215,
@@ -242,7 +238,7 @@ expression: tokens
         content: "</title>\n    ",
     },
     TokenSnapshot {
-        token: ExprStart(
+        token: ScriptStart(
             ByteOffset {
                 start: 228,
                 end: 230,
@@ -251,7 +247,7 @@ expression: tokens
         content: "{{",
     },
     TokenSnapshot {
-        token: Keyword(
+        token: Else(
             ByteOffset {
                 start: 231,
                 end: 235,
@@ -260,7 +256,7 @@ expression: tokens
         content: "else",
     },
     TokenSnapshot {
-        token: ExprEnd(
+        token: ScriptEnd(
             ByteOffset {
                 start: 236,
                 end: 238,
@@ -278,7 +274,7 @@ expression: tokens
         content: "\n    <title>",
     },
     TokenSnapshot {
-        token: ExprStart(
+        token: ScriptStart(
             ByteOffset {
                 start: 250,
                 end: 252,
@@ -296,8 +292,7 @@ expression: tokens
         content: "page",
     },
     TokenSnapshot {
-        token: Symbol(
-            '.',
+        token: Dot(
             ByteOffset {
                 start: 257,
                 end: 258,
@@ -315,7 +310,7 @@ expression: tokens
         content: "title",
     },
     TokenSnapshot {
-        token: ExprEnd(
+        token: ScriptEnd(
             ByteOffset {
                 start: 264,
                 end: 266,
@@ -333,7 +328,7 @@ expression: tokens
         content: "</title>\n    ",
     },
     TokenSnapshot {
-        token: ExprStart(
+        token: ScriptStart(
             ByteOffset {
                 start: 279,
                 end: 281,
@@ -342,7 +337,7 @@ expression: tokens
         content: "{{",
     },
     TokenSnapshot {
-        token: Keyword(
+        token: End(
             ByteOffset {
                 start: 282,
                 end: 285,
@@ -351,7 +346,7 @@ expression: tokens
         content: "end",
     },
     TokenSnapshot {
-        token: ExprEnd(
+        token: ScriptEnd(
             ByteOffset {
                 start: 286,
                 end: 288,
@@ -369,7 +364,7 @@ expression: tokens
         content: "\n\n    ",
     },
     TokenSnapshot {
-        token: ExprStart(
+        token: ScriptStart(
             ByteOffset {
                 start: 294,
                 end: 296,
@@ -378,7 +373,7 @@ expression: tokens
         content: "{{",
     },
     TokenSnapshot {
-        token: Keyword(
+        token: Slot(
             ByteOffset {
                 start: 297,
                 end: 301,
@@ -396,7 +391,7 @@ expression: tokens
         content: "head",
     },
     TokenSnapshot {
-        token: ExprEnd(
+        token: ScriptEnd(
             ByteOffset {
                 start: 309,
                 end: 311,
@@ -414,7 +409,7 @@ expression: tokens
         content: "\n  </head>\n  <body>\n    <main>\n      ",
     },
     TokenSnapshot {
-        token: ExprStart(
+        token: ScriptStart(
             ByteOffset {
                 start: 348,
                 end: 350,
@@ -423,7 +418,7 @@ expression: tokens
         content: "{{",
     },
     TokenSnapshot {
-        token: Keyword(
+        token: Slot(
             ByteOffset {
                 start: 351,
                 end: 355,
@@ -441,7 +436,7 @@ expression: tokens
         content: "page",
     },
     TokenSnapshot {
-        token: ExprEnd(
+        token: ScriptEnd(
             ByteOffset {
                 start: 363,
                 end: 365,

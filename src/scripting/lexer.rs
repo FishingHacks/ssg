@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::ops::ControlFlow;
 use std::sync::Arc;
 
@@ -9,43 +10,119 @@ enum LexingMode {
     Script,
 }
 
-#[derive(Debug)]
-pub struct Lexer {
-    cursor: usize,
-    source: Arc<String>,
-    mode: LexingMode,
-    html_start: Option<usize>,
-    script_start: Option<usize>,
-    peeked: Option<Result<Token, ParsingError>>,
-}
-
 #[derive(Debug, Clone, Copy)]
 pub enum Token {
     Html(ByteOffset),
-    ExprStart(ByteOffset),
-    ExprEnd(ByteOffset),
+    ScriptStart(ByteOffset),
+    ScriptEnd(ByteOffset),
     Identifier(ByteOffset),
     StringLiteral(ByteOffset),
-    Keyword(ByteOffset),
-    Symbol(char, ByteOffset),
     Float(ByteOffset),
     Int(ByteOffset),
+
+    Assign(ByteOffset),
+    Equal(ByteOffset),
+    NotEqual(ByteOffset),
+    GreaterEqual(ByteOffset),
+    LesserEqual(ByteOffset),
+    Greater(ByteOffset),
+    Lesser(ByteOffset),
+    Dot(ByteOffset),
+    LeftParen(ByteOffset),
+    RightParen(ByteOffset),
+    Minus(ByteOffset),
+    Plus(ByteOffset),
+    Mul(ByteOffset),
+
+    Comma(ByteOffset),
+
+    For(ByteOffset),
+    In(ByteOffset),
+    End(ByteOffset),
+    If(ByteOffset),
+    Else(ByteOffset),
+    Block(ByteOffset),
+    Render(ByteOffset),
+    Slot(ByteOffset),
+    Extend(ByteOffset),
 }
 
 impl Token {
     pub fn loc(&self) -> ByteOffset {
         match self {
             Token::Html(byte_offset)
-            | Token::ExprStart(byte_offset)
-            | Token::ExprEnd(byte_offset)
+            | Token::ScriptStart(byte_offset)
+            | Token::ScriptEnd(byte_offset)
             | Token::Identifier(byte_offset)
             | Token::StringLiteral(byte_offset)
-            | Token::Keyword(byte_offset)
-            | Token::Symbol(_, byte_offset)
             | Token::Float(byte_offset)
+            | Token::Assign(byte_offset)
+            | Token::Equal(byte_offset)
+            | Token::NotEqual(byte_offset)
+            | Token::GreaterEqual(byte_offset)
+            | Token::LesserEqual(byte_offset)
+            | Token::Greater(byte_offset)
+            | Token::Lesser(byte_offset)
+            | Token::Dot(byte_offset)
+            | Token::LeftParen(byte_offset)
+            | Token::RightParen(byte_offset)
+            | Token::Minus(byte_offset)
+            | Token::Plus(byte_offset)
+            | Token::For(byte_offset)
+            | Token::In(byte_offset)
+            | Token::End(byte_offset)
+            | Token::If(byte_offset)
+            | Token::Else(byte_offset)
+            | Token::Block(byte_offset)
+            | Token::Comma(byte_offset)
+            | Token::Render(byte_offset)
+            | Token::Slot(byte_offset)
+            | Token::Mul(byte_offset)
+            | Token::Extend(byte_offset)
             | Token::Int(byte_offset) => *byte_offset,
         }
     }
+
+    pub fn is_operator(&self) -> bool {
+        matches!(
+            self,
+            Token::Plus(_)
+                | Token::Minus(_)
+                | Token::LeftParen(_)
+                | Token::RightParen(_)
+                | Token::Lesser(_)
+                | Token::LesserEqual(_)
+                | Token::Greater(_)
+                | Token::GreaterEqual(_)
+                | Token::NotEqual(_)
+                | Token::Equal(_)
+                | Token::Mul(_)
+        )
+    }
+
+    pub fn is_keyword(&self) -> bool {
+        matches!(
+            self,
+            Token::For(_)
+                | Token::In(_)
+                | Token::If(_)
+                | Token::Render(_)
+                | Token::Extend(_)
+                | Token::Block(_)
+                | Token::Slot(_)
+                | Token::Else(_)
+        )
+    }
+}
+
+#[derive(Debug)]
+pub struct Lexer {
+    cursor: usize,
+    pub source: Arc<String>,
+    mode: LexingMode,
+    html_start: Option<usize>,
+    script_start: Option<usize>,
+    peeked: VecDeque<Result<Token, ParsingError>>,
 }
 
 impl Lexer {
@@ -53,18 +130,50 @@ impl Lexer {
         Self {
             source,
             cursor: 0,
-            peeked: None,
             html_start: None,
             script_start: None,
+            peeked: VecDeque::new(),
             mode: LexingMode::Html,
         }
     }
 
-    fn is_keyword(&self, ident: &str) -> bool {
-        matches!(
-            ident,
-            "for" | "in" | "end" | "if" | "else" | "block" | "render" | "slot" | "extend"
-        )
+    pub fn peek_n(&mut self, n: usize) -> Option<Result<Token, ParsingError>> {
+        let mut buffer = Vec::with_capacity(n);
+
+        while self.peeked.len() <= n {
+            let Some(next) = self.next() else {
+                break;
+            };
+
+            buffer.push(next);
+        }
+
+        self.peeked.extend(buffer);
+
+        self.peeked.get(n).cloned()
+    }
+
+    pub fn peek(&mut self) -> Option<Result<Token, ParsingError>> {
+        self.peek_n(0)
+    }
+
+    pub fn is_empty(&mut self) -> bool {
+        self.peek().is_none()
+    }
+
+    fn is_keyword(&self, ident: &str, offset: ByteOffset) -> Option<Token> {
+        match ident {
+            "for" => Some(Token::For(offset)),
+            "in" => Some(Token::In(offset)),
+            "end" => Some(Token::End(offset)),
+            "if" => Some(Token::If(offset)),
+            "else" => Some(Token::Else(offset)),
+            "block" => Some(Token::Block(offset)),
+            "render" => Some(Token::Render(offset)),
+            "slot" => Some(Token::Slot(offset)),
+            "extend" => Some(Token::Extend(offset)),
+            _ => None,
+        }
     }
 
     fn advance_script(&mut self, amount: usize) {
@@ -116,7 +225,7 @@ impl Lexer {
 
                 self.advance_script(2);
 
-                ControlFlow::Break(Ok(Token::ExprStart((start, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::ScriptStart((start, self.cursor).into())))
             }
             ('}', Some('}')) => {
                 self.mode = LexingMode::Html;
@@ -127,55 +236,63 @@ impl Lexer {
                     .take()
                     .expect("script start must be set while lexing script content");
 
-                ControlFlow::Break(Ok(Token::ExprEnd((start, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::ScriptEnd((start, self.cursor).into())))
             }
             (':', Some('=')) => {
                 self.advance_script(2);
-                ControlFlow::Break(Ok(Token::Keyword((self.cursor - 2, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::Assign((self.cursor - 2, self.cursor).into())))
             }
             ('=', Some('=')) => {
                 self.advance_script(2);
-                ControlFlow::Break(Ok(Token::Keyword((self.cursor - 2, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::Equal((self.cursor - 2, self.cursor).into())))
             }
             ('!', Some('=')) => {
                 self.advance_script(2);
-                ControlFlow::Break(Ok(Token::Keyword((self.cursor - 2, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::NotEqual((self.cursor - 2, self.cursor).into())))
             }
             ('>', Some('=')) => {
                 self.advance_script(2);
-                ControlFlow::Break(Ok(Token::Keyword((self.cursor - 2, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::GreaterEqual((self.cursor - 2, self.cursor).into())))
             }
             ('<', Some('=')) => {
                 self.advance_script(2);
-                ControlFlow::Break(Ok(Token::Keyword((self.cursor - 2, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::LesserEqual((self.cursor - 2, self.cursor).into())))
             }
             ('>', _) => {
                 self.advance_script(1);
-                ControlFlow::Break(Ok(Token::Symbol(curr, (self.cursor - 1, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::Greater((self.cursor - 1, self.cursor).into())))
             }
             ('<', _) => {
                 self.advance_script(1);
-                ControlFlow::Break(Ok(Token::Symbol(curr, (self.cursor - 1, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::Lesser((self.cursor - 1, self.cursor).into())))
             }
             ('.', _) => {
                 self.advance_script(1);
-                ControlFlow::Break(Ok(Token::Symbol(curr, (self.cursor - 1, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::Dot((self.cursor - 1, self.cursor).into())))
             }
             ('(', _) => {
                 self.advance_script(1);
-                ControlFlow::Break(Ok(Token::Symbol(curr, (self.cursor - 1, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::LeftParen((self.cursor - 1, self.cursor).into())))
             }
             (')', _) => {
                 self.advance_script(1);
-                ControlFlow::Break(Ok(Token::Symbol(curr, (self.cursor - 1, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::RightParen((self.cursor - 1, self.cursor).into())))
             }
             ('-', _) => {
                 self.advance_script(1);
-                ControlFlow::Break(Ok(Token::Symbol(curr, (self.cursor - 1, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::Minus((self.cursor - 1, self.cursor).into())))
+            }
+            ('*', _) => {
+                self.advance_script(1);
+                ControlFlow::Break(Ok(Token::Mul((self.cursor - 1, self.cursor).into())))
+            }
+            (',', _) => {
+                self.advance_script(1);
+                ControlFlow::Break(Ok(Token::Comma((self.cursor - 1, self.cursor).into())))
             }
             ('+', _) => {
                 self.advance_script(1);
-                ControlFlow::Break(Ok(Token::Symbol(curr, (self.cursor - 1, self.cursor).into())))
+                ControlFlow::Break(Ok(Token::Plus((self.cursor - 1, self.cursor).into())))
             }
             ('"' | '\'', _) => {
                 self.cursor += 1;
@@ -245,12 +362,13 @@ impl Lexer {
 
                     let end = start + length;
                     let content = &self.source[start..end];
+                    let offset = (start, end).into();
 
-                    if self.is_keyword(content) {
-                        return ControlFlow::Break(Ok(Token::Keyword((start, end).into())));
+                    if let Some(keyword) = self.is_keyword(content, offset) {
+                        return ControlFlow::Break(Ok(keyword));
                     }
 
-                    return ControlFlow::Break(Ok(Token::Identifier((start, end).into())));
+                    return ControlFlow::Break(Ok(Token::Identifier(offset)));
                 }
 
                 println!("{c:?}");
@@ -265,7 +383,7 @@ impl Iterator for Lexer {
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if let Some(peeked) = self.peeked.take() {
+            if let Some(peeked) = self.peeked.pop_front() {
                 return Some(peeked);
             }
 
@@ -300,7 +418,7 @@ impl Identifier for char {
     }
 
     fn is_valid_identifier(&self) -> bool {
-        self.is_ascii_alphanumeric()
+        self.is_ascii_alphanumeric() || matches!(self, '_')
     }
 }
 

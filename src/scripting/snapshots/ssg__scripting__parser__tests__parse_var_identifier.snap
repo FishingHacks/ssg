@@ -1,0 +1,21 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+Ast {
+    source: "{{ var_name := something_else }}",
+    nodes: [
+        Variable {
+            ident: ByteOffset {
+                start: 3,
+                end: 11,
+            },
+            value: Identifier(
+                ByteOffset {
+                    start: 15,
+                    end: 29,
+                },
+            ),
+        },
+    ],
+}

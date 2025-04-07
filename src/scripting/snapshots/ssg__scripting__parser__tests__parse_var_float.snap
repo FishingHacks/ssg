@@ -1,0 +1,21 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+Ast {
+    source: "{{ var_name := 13.37 }}",
+    nodes: [
+        Variable {
+            ident: ByteOffset {
+                start: 3,
+                end: 11,
+            },
+            value: FloatLiteral(
+                ByteOffset {
+                    start: 15,
+                    end: 20,
+                },
+            ),
+        },
+    ],
+}
