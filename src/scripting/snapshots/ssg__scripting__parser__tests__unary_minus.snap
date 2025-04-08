@@ -1,0 +1,326 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    Minus {
+        expr: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 5,
+                start: 4,
+                content: "b",
+            },
+            content: "b",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 5,
+            start: 3,
+            content: "-b",
+        },
+        content: "-b",
+    },
+    Minus {
+        expr: IntLiteral {
+            offset: ByteOffsetSnapshot {
+                end: 13,
+                start: 12,
+                content: "1",
+            },
+            content: "1",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 13,
+            start: 11,
+            content: "-1",
+        },
+        content: "-1",
+    },
+    BinaryOp {
+        left: Not {
+            expr: Minus {
+                expr: IntLiteral {
+                    offset: ByteOffsetSnapshot {
+                        end: 25,
+                        start: 24,
+                        content: "1",
+                    },
+                    content: "1",
+                },
+                offset: ByteOffsetSnapshot {
+                    end: 25,
+                    start: 23,
+                    content: "-1",
+                },
+                content: "-1",
+            },
+            offset: ByteOffsetSnapshot {
+                end: 25,
+                start: 19,
+                content: "not -1",
+            },
+            content: "not -1",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 34,
+                start: 30,
+                content: "true",
+            },
+            content: "true",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 34,
+            start: 19,
+            content: "not -1 and true",
+        },
+        content: "not -1 and true",
+        operator: And,
+    },
+    BinaryOp {
+        left: Not {
+            expr: Minus {
+                expr: Identifier {
+                    offset: ByteOffsetSnapshot {
+                        end: 46,
+                        start: 45,
+                        content: "b",
+                    },
+                    content: "b",
+                },
+                offset: ByteOffsetSnapshot {
+                    end: 46,
+                    start: 44,
+                    content: "-b",
+                },
+                content: "-b",
+            },
+            offset: ByteOffsetSnapshot {
+                end: 46,
+                start: 40,
+                content: "not -b",
+            },
+            content: "not -b",
+        },
+        right: Identifier {
+            offset: ByteOffsetSnapshot {
+                end: 55,
+                start: 51,
+                content: "true",
+            },
+            content: "true",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 55,
+            start: 40,
+            content: "not -b and true",
+        },
+        content: "not -b and true",
+        operator: And,
+    },
+    BinaryOp {
+        left: Minus {
+            expr: BinaryOp {
+                left: Minus {
+                    expr: IntLiteral {
+                        offset: ByteOffsetSnapshot {
+                            end: 65,
+                            start: 64,
+                            content: "1",
+                        },
+                        content: "1",
+                    },
+                    offset: ByteOffsetSnapshot {
+                        end: 65,
+                        start: 63,
+                        content: "-1",
+                    },
+                    content: "-1",
+                },
+                right: Minus {
+                    expr: IntLiteral {
+                        offset: ByteOffsetSnapshot {
+                            end: 70,
+                            start: 69,
+                            content: "2",
+                        },
+                        content: "2",
+                    },
+                    offset: ByteOffsetSnapshot {
+                        end: 70,
+                        start: 68,
+                        content: "-2",
+                    },
+                    content: "-2",
+                },
+                offset: ByteOffsetSnapshot {
+                    end: 70,
+                    start: 63,
+                    content: "-1 - -2",
+                },
+                content: "-1 - -2",
+                operator: Minus,
+            },
+            offset: ByteOffsetSnapshot {
+                end: 70,
+                start: 61,
+                content: "-(-1 - -2",
+            },
+            content: "-(-1 - -2",
+        },
+        right: Minus {
+            expr: BinaryOp {
+                left: IntLiteral {
+                    offset: ByteOffsetSnapshot {
+                        end: 77,
+                        start: 76,
+                        content: "3",
+                    },
+                    content: "3",
+                },
+                right: Minus {
+                    expr: IntLiteral {
+                        offset: ByteOffsetSnapshot {
+                            end: 82,
+                            start: 81,
+                            content: "2",
+                        },
+                        content: "2",
+                    },
+                    offset: ByteOffsetSnapshot {
+                        end: 82,
+                        start: 80,
+                        content: "-2",
+                    },
+                    content: "-2",
+                },
+                offset: ByteOffsetSnapshot {
+                    end: 82,
+                    start: 76,
+                    content: "3 * -2",
+                },
+                content: "3 * -2",
+                operator: Mul,
+            },
+            offset: ByteOffsetSnapshot {
+                end: 82,
+                start: 74,
+                content: "-(3 * -2",
+            },
+            content: "-(3 * -2",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 82,
+            start: 61,
+            content: "-(-1 - -2) * -(3 * -2",
+        },
+        content: "-(-1 - -2) * -(3 * -2",
+        operator: Mul,
+    },
+    Variable {
+        ident: ByteOffsetSnapshot {
+            end: 98,
+            start: 89,
+            content: "something",
+        },
+        value: BinaryOp {
+            left: Minus {
+                expr: BinaryOp {
+                    left: Minus {
+                        expr: IntLiteral {
+                            offset: ByteOffsetSnapshot {
+                                end: 106,
+                                start: 105,
+                                content: "1",
+                            },
+                            content: "1",
+                        },
+                        offset: ByteOffsetSnapshot {
+                            end: 106,
+                            start: 104,
+                            content: "-1",
+                        },
+                        content: "-1",
+                    },
+                    right: Minus {
+                        expr: IntLiteral {
+                            offset: ByteOffsetSnapshot {
+                                end: 111,
+                                start: 110,
+                                content: "2",
+                            },
+                            content: "2",
+                        },
+                        offset: ByteOffsetSnapshot {
+                            end: 111,
+                            start: 109,
+                            content: "-2",
+                        },
+                        content: "-2",
+                    },
+                    offset: ByteOffsetSnapshot {
+                        end: 111,
+                        start: 104,
+                        content: "-1 - -2",
+                    },
+                    content: "-1 - -2",
+                    operator: Minus,
+                },
+                offset: ByteOffsetSnapshot {
+                    end: 111,
+                    start: 102,
+                    content: "-(-1 - -2",
+                },
+                content: "-(-1 - -2",
+            },
+            right: Minus {
+                expr: BinaryOp {
+                    left: IntLiteral {
+                        offset: ByteOffsetSnapshot {
+                            end: 118,
+                            start: 117,
+                            content: "3",
+                        },
+                        content: "3",
+                    },
+                    right: Minus {
+                        expr: IntLiteral {
+                            offset: ByteOffsetSnapshot {
+                                end: 123,
+                                start: 122,
+                                content: "2",
+                            },
+                            content: "2",
+                        },
+                        offset: ByteOffsetSnapshot {
+                            end: 123,
+                            start: 121,
+                            content: "-2",
+                        },
+                        content: "-2",
+                    },
+                    offset: ByteOffsetSnapshot {
+                        end: 123,
+                        start: 117,
+                        content: "3 * -2",
+                    },
+                    content: "3 * -2",
+                    operator: Mul,
+                },
+                offset: ByteOffsetSnapshot {
+                    end: 123,
+                    start: 115,
+                    content: "-(3 * -2",
+                },
+                content: "-(3 * -2",
+            },
+            offset: ByteOffsetSnapshot {
+                end: 123,
+                start: 102,
+                content: "-(-1 - -2) * -(3 * -2",
+            },
+            content: "-(-1 - -2) * -(3 * -2",
+            operator: Mul,
+        },
+        content: "something := -(-1 - -2) * -(3 * -2",
+    },
+]

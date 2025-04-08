@@ -338,6 +338,13 @@ impl Parser {
                     expr: Box::new(left),
                 })
             }
+            Operator::Minus => {
+                let left = self.parse_expression(precedences::UNARY)?;
+                Ok(AstNode::Minus {
+                    offset: token.loc() + left.loc(),
+                    expr: Box::new(left),
+                })
+            }
             t => unreachable!("{t:?}"),
         }
     }
@@ -602,6 +609,11 @@ mod tests {
             offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
         },
+        Minus {
+            expr: Box<AstNodeSnapshot<'ast>>,
+            offset: ByteOffsetSnapshot<'ast>,
+            content: &'ast str,
+        },
     }
 
     fn node_to_snapshot(node: AstNode, source: &str) -> AstNodeSnapshot<'_> {
@@ -735,6 +747,11 @@ mod tests {
             },
             AstNode::Slot { offset, name } => AstNodeSnapshot::Slot {
                 name: name.map(|n| ByteOffsetSnapshot::with_content(n, source)),
+                offset: ByteOffsetSnapshot::with_content(offset, source),
+                content: &source[offset.range()],
+            },
+            AstNode::Minus { offset, expr } => AstNodeSnapshot::Minus {
+                expr: Box::new(node_to_snapshot(*expr, source)),
                 offset: ByteOffsetSnapshot::with_content(offset, source),
                 content: &source[offset.range()],
             },
@@ -1092,6 +1109,32 @@ mod tests {
     #[test]
     fn test_parse_slot() {
         let source = ["{{ slot \"name\" }}", "{{ slot }}"].join("\n");
+        let source = Arc::new(source);
+
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all().unwrap();
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
+    }
+
+    #[test]
+    fn test_unary_minus() {
+        let source = [
+            "{{ -b }}",
+            "{{ -1 }}",
+            "{{ not -1 and true }}",
+            "{{ not -b and true }}",
+            "{{ -(-1 - -2) * -(3 * -2) }}",
+            "{{ something := -(-1 - -2) * -(3 * -2) }}",
+        ]
+        .join("");
         let source = Arc::new(source);
 
         let lexer = Lexer::new(source.clone());
