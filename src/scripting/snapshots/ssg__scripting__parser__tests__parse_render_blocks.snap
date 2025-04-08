@@ -10,11 +10,11 @@ expression: ast
             content: "other",
         },
         offset: ByteOffsetSnapshot {
-            end: 16,
-            start: 11,
-            content: "other",
+            end: 24,
+            start: 0,
+            content: "{{ render \"other\" end }}",
         },
-        content: "other",
+        content: "{{ render \"other\" end }}",
         body: [],
     },
     Html {
@@ -33,10 +33,10 @@ expression: ast
         },
         offset: ByteOffsetSnapshot {
             end: 77,
-            start: 36,
-            content: "name\" }}\n<span>html here</span>\n{{ end }}",
+            start: 25,
+            content: "{{ render \"name\" }}\n<span>html here</span>\n{{ end }}",
         },
-        content: "name\" }}\n<span>html here</span>\n{{ end }}",
+        content: "{{ render \"name\" }}\n<span>html here</span>\n{{ end }}",
         body: [
             Html {
                 offset: ByteOffsetSnapshot {

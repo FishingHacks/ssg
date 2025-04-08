@@ -53,11 +53,11 @@ expression: ast
                     content: "button.html",
                 },
                 offset: ByteOffsetSnapshot {
-                    end: 90,
-                    start: 79,
-                    content: "button.html",
+                    end: 98,
+                    start: 68,
+                    content: "{{ render \"button.html\" end }}",
                 },
-                content: "button.html",
+                content: "{{ render \"button.html\" end }}",
                 body: [],
             },
             Html {

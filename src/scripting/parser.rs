@@ -158,8 +158,7 @@ impl Parser {
         let mut nodes = vec![];
 
         while !self.lexer.is_empty() {
-            let node = self.parse()?;
-            nodes.push(node);
+            nodes.push(self.parse()?);
         }
 
         Ok(Ast {
@@ -192,6 +191,11 @@ impl Parser {
             return self.parse_for_loop(start);
         }
 
+        if matches!(token, Token::Slot(_)) {
+            consume!(self.lexer);
+            return self.parse_slot(start);
+        }
+
         if matches!(token, Token::If(_)) {
             consume!(self.lexer);
             return self.parse_if_statement(start);
@@ -204,7 +208,7 @@ impl Parser {
 
         if matches!(token, Token::Render(_)) {
             consume!(self.lexer);
-            return self.parse_render();
+            return self.parse_render(start);
         }
 
         if matches!(token, Token::Extend(_)) {
@@ -365,6 +369,22 @@ impl Parser {
         })
     }
 
+    fn parse_slot(&mut self, start: Token) -> Result<AstNode, ParsingError> {
+        let name = match peek_bail!(self.lexer) {
+            Token::StringLiteral(offset) => Some(offset),
+            _ => None,
+        };
+
+        if name.is_some() {
+            consume!(self.lexer);
+        }
+
+        let end = expect!(self.lexer, Token::ScriptEnd(_))?;
+
+        let offset = start.loc() + end.loc();
+        Ok(AstNode::Slot { name, offset })
+    }
+
     fn parse_if_statement(&mut self, start: Token) -> Result<AstNode, ParsingError> {
         let condition = self.parse_expression(precedences::BASE)?;
         expect!(self.lexer, Token::ScriptEnd(_))?;
@@ -392,20 +412,6 @@ impl Parser {
 
     fn parse_block(&mut self, start: Token) -> Result<AstNode, ParsingError> {
         let name = expect!(self.lexer, Token::StringLiteral(_))?.loc();
-        expect!(self.lexer, Token::ScriptEnd(_))?;
-
-        let block = self.parse_until_block_delimiter(|t| matches!(t, Token::End(_)))?;
-        let offset = start.loc() + block.end;
-
-        Ok(AstNode::Block {
-            name,
-            offset,
-            body: block.body,
-        })
-    }
-
-    fn parse_render(&mut self) -> Result<AstNode, ParsingError> {
-        let component = expect!(self.lexer, Token::StringLiteral(_))?.loc();
         let mut block = BlockDelimiter::default();
 
         // when the component name is not immediately followed by a `end`, render
@@ -419,7 +425,35 @@ impl Parser {
             expect!(self.lexer, Token::ScriptEnd(_))?;
         }
 
-        let offset = if has_block { component + block.end } else { component };
+        let offset = start.loc() + block.end;
+
+        Ok(AstNode::Block {
+            name,
+            offset,
+            body: block.body,
+        })
+    }
+
+    fn parse_render(&mut self, start: Token) -> Result<AstNode, ParsingError> {
+        let component = expect!(self.lexer, Token::StringLiteral(_))?.loc();
+        let mut block = BlockDelimiter::default();
+
+        // when the component name is not immediately followed by a `end`, render
+        // block has a body
+        let has_block = matches!(peek_bail!(self.lexer), Token::ScriptEnd(_));
+        if has_block {
+            consume!(self.lexer);
+            block = self.parse_until_block_delimiter(|t| matches!(t, Token::End(_)))?;
+        } else {
+            expect!(self.lexer, Token::End(_))?;
+        }
+
+        let offset = if has_block {
+            start.loc() + block.end
+        } else {
+            let end = expect!(self.lexer, Token::ScriptEnd(_))?;
+            start.loc() + end.loc()
+        };
         Ok(AstNode::Render {
             component,
             offset,
@@ -563,6 +597,11 @@ mod tests {
             offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
         },
+        Slot {
+            name: Option<ByteOffsetSnapshot<'ast>>,
+            offset: ByteOffsetSnapshot<'ast>,
+            content: &'ast str,
+        },
     }
 
     fn node_to_snapshot(node: AstNode, source: &str) -> AstNodeSnapshot<'_> {
@@ -691,6 +730,11 @@ mod tests {
             },
             AstNode::Not { offset, expr } => AstNodeSnapshot::Not {
                 expr: Box::new(node_to_snapshot(*expr, source)),
+                offset: ByteOffsetSnapshot::with_content(offset, source),
+                content: &source[offset.range()],
+            },
+            AstNode::Slot { offset, name } => AstNodeSnapshot::Slot {
+                name: name.map(|n| ByteOffsetSnapshot::with_content(n, source)),
                 offset: ByteOffsetSnapshot::with_content(offset, source),
                 content: &source[offset.range()],
             },
@@ -941,7 +985,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_binary_expressions() -> miette::Result<()> {
+    fn test_parse_binary_expressions() {
         let source = [
             "{{ something ?? other_thing }}",
             "{{ something and other_thing }}",
@@ -963,7 +1007,7 @@ mod tests {
 
         let lexer = Lexer::new(source.clone());
         let mut parser = Parser::new(source.clone(), lexer);
-        let ast = parser.parse_all()?;
+        let ast = parser.parse_all().unwrap();
 
         let ast = ast
             .nodes
@@ -972,12 +1016,10 @@ mod tests {
             .collect::<Vec<_>>();
 
         insta::assert_debug_snapshot!(ast);
-
-        Ok(())
     }
 
     #[test]
-    fn test_parse_unary_expressions() -> miette::Result<()> {
+    fn test_parse_unary_expressions() {
         let source = [
             "{{ not something and other_thing }}",
             "{{ not (something and other_thing) }}",
@@ -987,7 +1029,7 @@ mod tests {
 
         let lexer = Lexer::new(source.clone());
         let mut parser = Parser::new(source.clone(), lexer);
-        let ast = parser.parse_all()?;
+        let ast = parser.parse_all().unwrap();
 
         let ast = ast
             .nodes
@@ -996,23 +1038,23 @@ mod tests {
             .collect::<Vec<_>>();
 
         insta::assert_debug_snapshot!(ast);
-
-        Ok(())
     }
 
     #[test]
-    fn test_parse_blocks() -> miette::Result<()> {
+    fn test_parse_blocks() {
         let source = [
             "{{ block \"name\" }}",
             "<span>html here</span>",
             "{{ end }}",
+            // empty block
+            "{{ block \"name\" end }}",
         ]
         .join("\n");
         let source = Arc::new(source);
 
         let lexer = Lexer::new(source.clone());
         let mut parser = Parser::new(source.clone(), lexer);
-        let ast = parser.parse_all()?;
+        let ast = parser.parse_all().unwrap();
 
         let ast = ast
             .nodes
@@ -1021,12 +1063,10 @@ mod tests {
             .collect::<Vec<_>>();
 
         insta::assert_debug_snapshot!(ast);
-
-        Ok(())
     }
 
     #[test]
-    fn test_parse_render_blocks() -> miette::Result<()> {
+    fn test_parse_render_blocks() {
         let source = [
             "{{ render \"other\" end }}",
             "{{ render \"name\" }}",
@@ -1038,7 +1078,7 @@ mod tests {
 
         let lexer = Lexer::new(source.clone());
         let mut parser = Parser::new(source.clone(), lexer);
-        let ast = parser.parse_all()?;
+        let ast = parser.parse_all().unwrap();
 
         let ast = ast
             .nodes
@@ -1047,7 +1087,23 @@ mod tests {
             .collect::<Vec<_>>();
 
         insta::assert_debug_snapshot!(ast);
+    }
 
-        Ok(())
+    #[test]
+    fn test_parse_slot() {
+        let source = ["{{ slot \"name\" }}", "{{ slot }}"].join("\n");
+        let source = Arc::new(source);
+
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all().unwrap();
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
     }
 }

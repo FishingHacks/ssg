@@ -1,0 +1,38 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    Slot {
+        name: Some(
+            ByteOffsetSnapshot {
+                end: 13,
+                start: 9,
+                content: "name",
+            },
+        ),
+        offset: ByteOffsetSnapshot {
+            end: 17,
+            start: 0,
+            content: "{{ slot \"name\" }}",
+        },
+        content: "{{ slot \"name\" }}",
+    },
+    Html {
+        offset: ByteOffsetSnapshot {
+            end: 18,
+            start: 17,
+            content: "\n",
+        },
+        content: "\n",
+    },
+    Slot {
+        name: None,
+        offset: ByteOffsetSnapshot {
+            end: 28,
+            start: 18,
+            content: "{{ slot }}",
+        },
+        content: "{{ slot }}",
+    },
+]

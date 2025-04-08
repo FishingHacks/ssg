@@ -26,4 +26,26 @@ expression: ast
             },
         ],
     },
+    Html {
+        offset: ByteOffsetSnapshot {
+            end: 52,
+            start: 51,
+            content: "\n",
+        },
+        content: "\n",
+    },
+    Block {
+        name: ByteOffsetSnapshot {
+            end: 66,
+            start: 62,
+            content: "name",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 54,
+            start: 0,
+            content: "{{ block \"name\" }}\n<span>html here</span>\n{{ end }}\n{{",
+        },
+        content: "{{ block \"name\" }}\n<span>html here</span>\n{{ end }}\n{{",
+        body: [],
+    },
 ]

@@ -149,6 +149,10 @@ pub enum AstNode {
         expr: Box<AstNode>,
         offset: ByteOffset,
     },
+    Slot {
+        name: Option<ByteOffset>,
+        offset: ByteOffset,
+    },
 }
 
 #[derive(Debug)]
@@ -216,6 +220,7 @@ impl AstNode {
             AstNode::Block { offset, .. } => *offset,
             AstNode::Not { offset, .. } => *offset,
             AstNode::Extend { offset, .. } => *offset,
+            AstNode::Slot { offset, .. } => *offset,
             AstNode::Render { offset, .. } => *offset,
             AstNode::ForLoop { offset, .. } => *offset,
             AstNode::BinaryOp { offset, .. } => *offset,
