@@ -1,0 +1,19 @@
+---
+source: src/scripting/parser.rs
+expression: ast
+---
+[
+    Extend {
+        template: ByteOffsetSnapshot {
+            end: 21,
+            start: 11,
+            content: "_base.html",
+        },
+        offset: ByteOffsetSnapshot {
+            end: 25,
+            start: 0,
+            content: "{{ extend \"_base.html\" }}",
+        },
+        content: "{{ extend \"_base.html\" }}",
+    },
+]

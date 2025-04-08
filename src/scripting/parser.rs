@@ -63,7 +63,7 @@ macro_rules! peek_bail {
         let Some(token) = peek!($lexer) else {
             return Err(ParsingError {
                 src: $lexer.source.clone(),
-                at: (0..1).into(),
+                at: $lexer.position().into(),
                 help: "Syntax error: unterminated expression".into(),
             });
         };
@@ -75,7 +75,7 @@ macro_rules! peek_bail {
         let Some(token) = peek!($lexer, $amount) else {
             return Err(ParsingError {
                 src: $lexer.source.clone(),
-                at: (0..1).into(),
+                at: $lexer.position().into(),
                 help: "Syntax error: unterminated expression".into(),
             });
         };
@@ -102,11 +102,8 @@ macro_rules! expect {
     ($lexer:expr, $expected:pat) => {{
         let Some(token) = $lexer.next().transpose()? else {
             return Err(ParsingError {
-                at: (0..1).into(),
-                help: format!(
-                    "Unexpected token: expected {:?} but found EOF",
-                    stringify!($expected)
-                ),
+                at: $lexer.position().into(),
+                help: "Unexpected end of input".into(),
                 src: $lexer.source.clone(),
             });
         };
@@ -116,10 +113,7 @@ macro_rules! expect {
         } else {
             Err(ParsingError {
                 at: token.loc().range().into(),
-                help: format!(
-                    "Unexpecte token: expected {:?} but found {token:?}",
-                    stringify!($expected)
-                ),
+                help: format!("Unexpected token {token}",),
                 src: $lexer.source.clone(),
             })
         }
@@ -212,10 +206,10 @@ impl Parser {
         }
 
         if matches!(token, Token::Extend(_)) {
-            let keyword = expect!(self.lexer, Token::Extend(_))?;
+            expect!(self.lexer, Token::Extend(_))?;
             let template = expect!(self.lexer, Token::StringLiteral(_))?.loc();
-            let offset = keyword.loc() + template;
-            expect!(self.lexer, Token::ScriptEnd(_))?;
+            let end = expect!(self.lexer, Token::ScriptEnd(_))?;
+            let offset = start.loc() + end.loc();
             return Ok(AstNode::Extend { template, offset });
         }
 
@@ -442,7 +436,14 @@ impl Parser {
     }
 
     fn parse_render(&mut self, start: Token) -> Result<AstNode, ParsingError> {
-        let component = expect!(self.lexer, Token::StringLiteral(_))?.loc();
+        let component = match peek_bail!(self.lexer) {
+            Token::StringLiteral(_) => {
+                let name = expect!(self.lexer, Token::StringLiteral(_))?.loc();
+                AstNode::StringLiteral(name)
+            }
+            _ => self.parse_expression(precedences::BASE)?,
+        };
+
         let mut block = BlockDelimiter::default();
 
         // when the component name is not immediately followed by a `end`, render
@@ -461,8 +462,9 @@ impl Parser {
             let end = expect!(self.lexer, Token::ScriptEnd(_))?;
             start.loc() + end.loc()
         };
+
         Ok(AstNode::Render {
-            component,
+            component: Box::new(component),
             offset,
             body: block.body,
         })
@@ -564,7 +566,7 @@ mod tests {
             body: Vec<AstNodeSnapshot<'ast>>,
         },
         Render {
-            component: ByteOffsetSnapshot<'ast>,
+            component: Box<AstNodeSnapshot<'ast>>,
             offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
             body: Vec<AstNodeSnapshot<'ast>>,
@@ -679,7 +681,7 @@ mod tests {
             } => AstNodeSnapshot::Render {
                 content: &source[offset.range()],
                 offset: ByteOffsetSnapshot::with_content(offset, source),
-                component: ByteOffsetSnapshot::with_content(component, source),
+                component: Box::new(node_to_snapshot(*component, source)),
                 body: body
                     .into_iter()
                     .map(|node| node_to_snapshot(node, source))
@@ -1086,11 +1088,12 @@ mod tests {
     fn test_parse_render_blocks() {
         let source = [
             "{{ render \"other\" end }}",
+            "{{ render one.two end }}",
             "{{ render \"name\" }}",
             "<span>html here</span>",
             "{{ end }}",
         ]
-        .join("\n");
+        .join("");
         let source = Arc::new(source);
 
         let lexer = Lexer::new(source.clone());
@@ -1135,6 +1138,24 @@ mod tests {
             "{{ something := -(-1 - -2) * -(3 * -2) }}",
         ]
         .join("");
+        let source = Arc::new(source);
+
+        let lexer = Lexer::new(source.clone());
+        let mut parser = Parser::new(source.clone(), lexer);
+        let ast = parser.parse_all().unwrap();
+
+        let ast = ast
+            .nodes
+            .into_iter()
+            .map(|node| node_to_snapshot(node, &source))
+            .collect::<Vec<_>>();
+
+        insta::assert_debug_snapshot!(ast);
+    }
+
+    #[test]
+    fn test_parse_extend() {
+        let source = ["{{ extend \"_base.html\" }}"].join("");
         let source = Arc::new(source);
 
         let lexer = Lexer::new(source.clone());

@@ -47,9 +47,12 @@ expression: ast
                 content: "\n<div>\n  <span>Hello World!</span>\n</div>\n",
             },
             Render {
-                component: ByteOffsetSnapshot {
-                    end: 90,
-                    start: 79,
+                component: StringLiteral {
+                    offset: ByteOffsetSnapshot {
+                        end: 90,
+                        start: 79,
+                        content: "button.html",
+                    },
                     content: "button.html",
                 },
                 offset: ByteOffsetSnapshot {

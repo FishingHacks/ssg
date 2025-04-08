@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::fmt::Display;
 use std::ops::ControlFlow;
 use std::sync::Arc;
 
@@ -32,7 +33,6 @@ pub enum Token {
     Greater(ByteOffset),
     Lesser(ByteOffset),
     Either(ByteOffset),
-    Bang(ByteOffset),
     And(ByteOffset),
     Or(ByteOffset),
     Not(ByteOffset),
@@ -92,7 +92,6 @@ impl Token {
             | Token::Modulo(byte_offset)
             | Token::And(byte_offset)
             | Token::Or(byte_offset)
-            | Token::Bang(byte_offset)
             | Token::Int(byte_offset) => *byte_offset,
         }
     }
@@ -121,6 +120,49 @@ impl Token {
     }
 }
 
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::Html(_) => write!(f, "HTML"),
+            Token::ScriptStart(_) => write!(f, "SCRIPT_START"),
+            Token::ScriptEnd(_) => write!(f, "SCRIPT_END"),
+            Token::Identifier(_) => write!(f, "IDENTIFER"),
+            Token::StringLiteral(_) => write!(f, "STRING_LITERAL"),
+            Token::Float(_) => write!(f, "FLOAT"),
+            Token::Int(_) => write!(f, "INT"),
+            Token::Comma(_) => write!(f, "COMMA"),
+            Token::LeftParen(_) => write!(f, "LEFT_PAREN"),
+            Token::RightParen(_) => write!(f, "RIGHT_PAREN"),
+            Token::Assign(_) => write!(f, "ASSIGN"),
+            Token::Dot(_) => write!(f, "DOT"),
+            Token::Equal(_) => write!(f, "EQUAL"),
+            Token::NotEqual(_) => write!(f, "NOT_EQUAL"),
+            Token::GreaterEqual(_) => write!(f, "GREATER_EQUAL"),
+            Token::LesserEqual(_) => write!(f, "LESSER_EQUAL"),
+            Token::Greater(_) => write!(f, "GREATER"),
+            Token::Lesser(_) => write!(f, "LESSER"),
+            Token::Either(_) => write!(f, "EITHER"),
+            Token::And(_) => write!(f, "AND"),
+            Token::Or(_) => write!(f, "OR"),
+            Token::Not(_) => write!(f, "NOT"),
+            Token::Minus(_) => write!(f, "MINUS"),
+            Token::Plus(_) => write!(f, "PLUS"),
+            Token::Mul(_) => write!(f, "MUL"),
+            Token::Div(_) => write!(f, "DIV"),
+            Token::Modulo(_) => write!(f, "MODULO"),
+            Token::For(_) => write!(f, "FOR"),
+            Token::In(_) => write!(f, "IN"),
+            Token::End(_) => write!(f, "END"),
+            Token::If(_) => write!(f, "IF"),
+            Token::Else(_) => write!(f, "ELSE"),
+            Token::Block(_) => write!(f, "BLOCK"),
+            Token::Render(_) => write!(f, "RENDER"),
+            Token::Slot(_) => write!(f, "SLOT"),
+            Token::Extend(_) => write!(f, "EXTEND"),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Lexer {
     cursor: usize,
@@ -129,6 +171,7 @@ pub struct Lexer {
     html_start: Option<usize>,
     script_start: Option<usize>,
     peeked: VecDeque<Result<Token, ParsingError>>,
+    position: ByteOffset,
 }
 
 impl Lexer {
@@ -140,6 +183,7 @@ impl Lexer {
             script_start: None,
             peeked: VecDeque::new(),
             mode: LexingMode::Html,
+            position: ByteOffset::default(),
         }
     }
 
@@ -161,6 +205,10 @@ impl Lexer {
 
     pub fn peek(&mut self) -> Option<Result<Token, ParsingError>> {
         self.peek_n(0)
+    }
+
+    pub fn position(&self) -> ByteOffset {
+        self.position
     }
 
     pub fn is_empty(&mut self) -> bool {
@@ -417,6 +465,9 @@ impl Iterator for Lexer {
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if let Some(peeked) = self.peeked.pop_front() {
+                if let Ok(ref token) = peeked {
+                    self.position = token.loc();
+                }
                 return Some(peeked);
             }
 
@@ -429,11 +480,21 @@ impl Iterator for Lexer {
             match self.mode {
                 LexingMode::Html => match self.lex_html(first, second) {
                     ControlFlow::Continue(_) => continue,
-                    ControlFlow::Break(token) => return Some(token),
+                    ControlFlow::Break(token) => {
+                        if let Ok(ref token) = token {
+                            self.position = token.loc();
+                        }
+                        return Some(token);
+                    }
                 },
                 LexingMode::Script => match self.lex_script(first, second) {
                     ControlFlow::Continue(_) => continue,
-                    ControlFlow::Break(token) => return Some(token),
+                    ControlFlow::Break(token) => {
+                        if let Ok(ref token) = token {
+                            self.position = token.loc();
+                        }
+                        return Some(token);
+                    }
                 },
             }
         }

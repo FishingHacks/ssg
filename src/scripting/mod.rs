@@ -110,7 +110,7 @@ pub enum AstNode {
         body: Vec<AstNode>,
     },
     Render {
-        component: ByteOffset,
+        component: Box<AstNode>,
         offset: ByteOffset,
         body: Vec<AstNode>,
     },
@@ -196,7 +196,6 @@ impl Operator {
             Token::Modulo(_) => Operator::Modulo,
             Token::Dot(_) => Operator::Dot,
 
-            Token::Bang(_) => Operator::Not,
             Token::And(_) => Operator::And,
             Token::Or(_) => Operator::Or,
             Token::Either(_) => Operator::Either,

@@ -4,9 +4,12 @@ expression: ast
 ---
 [
     Render {
-        component: ByteOffsetSnapshot {
-            end: 16,
-            start: 11,
+        component: StringLiteral {
+            offset: ByteOffsetSnapshot {
+                end: 16,
+                start: 11,
+                content: "other",
+            },
             content: "other",
         },
         offset: ByteOffsetSnapshot {
@@ -17,34 +20,59 @@ expression: ast
         content: "{{ render \"other\" end }}",
         body: [],
     },
-    Html {
-        offset: ByteOffsetSnapshot {
-            end: 25,
-            start: 24,
-            content: "\n",
+    Render {
+        component: MemberAccess {
+            offset: ByteOffsetSnapshot {
+                end: 41,
+                start: 34,
+                content: "one.two",
+            },
+            content: "one.two",
+            property: ByteOffsetSnapshot {
+                end: 41,
+                start: 38,
+                content: "two",
+            },
+            object: Identifier {
+                offset: ByteOffsetSnapshot {
+                    end: 37,
+                    start: 34,
+                    content: "one",
+                },
+                content: "one",
+            },
         },
-        content: "\n",
+        offset: ByteOffsetSnapshot {
+            end: 48,
+            start: 24,
+            content: "{{ render one.two end }}",
+        },
+        content: "{{ render one.two end }}",
+        body: [],
     },
     Render {
-        component: ByteOffsetSnapshot {
-            end: 40,
-            start: 36,
+        component: StringLiteral {
+            offset: ByteOffsetSnapshot {
+                end: 63,
+                start: 59,
+                content: "name",
+            },
             content: "name",
         },
         offset: ByteOffsetSnapshot {
-            end: 77,
-            start: 25,
-            content: "{{ render \"name\" }}\n<span>html here</span>\n{{ end }}",
+            end: 98,
+            start: 48,
+            content: "{{ render \"name\" }}<span>html here</span>{{ end }}",
         },
-        content: "{{ render \"name\" }}\n<span>html here</span>\n{{ end }}",
+        content: "{{ render \"name\" }}<span>html here</span>{{ end }}",
         body: [
             Html {
                 offset: ByteOffsetSnapshot {
-                    end: 68,
-                    start: 44,
-                    content: "\n<span>html here</span>\n",
+                    end: 89,
+                    start: 67,
+                    content: "<span>html here</span>",
                 },
-                content: "\n<span>html here</span>\n",
+                content: "<span>html here</span>",
             },
         ],
     },
