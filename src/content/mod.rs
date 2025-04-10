@@ -2,10 +2,12 @@ mod markdown;
 
 use std::collections::HashMap;
 use std::ffi::OsStr;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use markdown::{FrontmatterError, Markdown};
 use miette::{Diagnostic, NamedSource, SourceSpan};
+use path_absolutize::Absolutize;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -50,13 +52,20 @@ pub struct ContentMeta {
     pub tags: Vec<String>,
     pub description: String,
     pub custom: HashMap<String, MetaValue>,
+    pub template: PathBuf,
 }
 
 #[derive(Debug)]
 pub struct ContentPage {
     source: Arc<String>,
     meta: ContentMeta,
-    html: Html,
+    html: String,
+}
+
+impl ContentPage {
+    pub fn meta(&self) -> &ContentMeta {
+        &self.meta
+    }
 }
 
 #[derive(Debug, Error, Diagnostic)]
@@ -102,7 +111,10 @@ where
 }
 
 impl ContentMeta {
-    pub fn from_unresolved<S>(mut ctx: MetaResolveContext<'_, S>) -> Result<Self, ContentParseError>
+    pub fn from_unresolved<S>(
+        config: Arc<SiteConfig>,
+        mut ctx: MetaResolveContext<'_, S>,
+    ) -> Result<Self, ContentParseError>
     where
         S: Into<SourceSpan>,
     {
@@ -192,18 +204,57 @@ impl ContentMeta {
             None => Default::default(),
         };
 
+        let template = match ctx.unresolved.0.remove("template") {
+            Some(MetaValue::String(template)) => template,
+            Some(_) => {
+                base_error.help = Some(String::from(
+                    r#"The `template` key must be a string
+
+Examples:
+template = "base.html"
+template = "subdir/page.html"
+template = "./subdir/page.html"#,
+                ));
+                return Err(base_error.into());
+            }
+            None => {
+                base_error.help = Some(String::from(
+                    r#"Every content page must have a `template` key.
+
+For templates in subdirectories, you can use relative paths starting from the
+`templates` directory.
+
+Examples:
+1. template = "base.html"
+    - Template would be loaded from <templates_dir>/base.html.
+
+2. template = "subdir/page.html"
+   template = "./subdir/page.html"
+    - Template would be loaded from <templates_dir>/subdir/base.html"#,
+                ));
+                return Err(base_error.into());
+            }
+        };
+
+        // TODO: maybe check if template exists and error early if not
+        let template = config
+            .templates_dir
+            .join(&template)
+            .absolutize()
+            .expect("template path here should be valid")
+            .to_path_buf();
+
         Ok(Self {
             title,
             draft,
             date,
             tags,
+            template,
             description,
             custom: ctx.unresolved.0,
         })
     }
 }
-
-type Html = String;
 
 pub struct ParsePageCtx {
     pub source: Arc<String>,
@@ -211,7 +262,11 @@ pub struct ParsePageCtx {
 }
 
 pub trait ContentParser {
-    fn parse(&self, parse_ctx: ParsePageCtx) -> Result<ContentPage, ContentParseError>;
+    fn parse(
+        &self,
+        config: Arc<SiteConfig>,
+        parse_ctx: ParsePageCtx,
+    ) -> Result<ContentPage, ContentParseError>;
 }
 
 #[derive(Debug)]
@@ -220,9 +275,13 @@ pub enum ParserImpl {
 }
 
 impl ContentParser for ParserImpl {
-    fn parse(&self, parse_ctx: ParsePageCtx) -> Result<ContentPage, ContentParseError> {
+    fn parse(
+        &self,
+        config: Arc<SiteConfig>,
+        parse_ctx: ParsePageCtx,
+    ) -> Result<ContentPage, ContentParseError> {
         match self {
-            Self::Markdown(inner) => inner.parse(parse_ctx),
+            Self::Markdown(inner) => inner.parse(config, parse_ctx),
         }
     }
 }
@@ -235,7 +294,7 @@ pub fn parser_from_filetype(filetype: FileType) -> ParserImpl {
 }
 
 pub async fn parse_content(
-    config: &SiteConfig,
+    config: Arc<SiteConfig>,
 ) -> miette::Result<Vec<ContentPage>, ContentParseError> {
     if !config.content_dir.exists() {
         return Err(ContentParseError::NoContent);
@@ -248,15 +307,19 @@ pub async fn parse_content(
         .map(|entry| {
             let path = entry.path().to_path_buf();
             let file_name = path.file_name().unwrap().to_string_lossy().to_string();
+            let config = config.clone();
 
             tokio::spawn(async move {
                 let content = Arc::new(tokio::fs::read_to_string(&path).await?);
                 let parser = parser_from_filetype(FileType::from(path.extension()));
 
-                parser.parse(ParsePageCtx {
-                    source: content,
-                    file_name,
-                })
+                parser.parse(
+                    config,
+                    ParsePageCtx {
+                        source: content,
+                        file_name,
+                    },
+                )
             })
         });
 

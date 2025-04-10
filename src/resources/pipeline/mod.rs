@@ -90,7 +90,7 @@ pub struct UnresolvedPipelineConfig {
     special_files: HashMap<String, String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct PipelineConfig {
     pre_build: Vec<PipelineCommand>,
     post_build: Vec<PipelineCommand>,

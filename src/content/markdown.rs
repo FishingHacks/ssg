@@ -7,6 +7,7 @@ use miette::{Diagnostic, SourceSpan};
 use thiserror::Error;
 
 use super::{ContentPage, ContentParseError, ContentParser, ParsePageCtx};
+use crate::config::SiteConfig;
 use crate::content::{ContentMeta, MetaResolveContext, UnresolvedContentMeta};
 
 #[derive(Debug, PartialEq)]
@@ -54,7 +55,11 @@ fn detect_frontmatter_engine(content: &Arc<String>) -> Result<FrontmatterEngine,
 }
 
 impl ContentParser for Markdown {
-    fn parse(&self, parse_ctx: ParsePageCtx) -> Result<ContentPage, ContentParseError> {
+    fn parse(
+        &self,
+        config: Arc<SiteConfig>,
+        parse_ctx: ParsePageCtx,
+    ) -> Result<ContentPage, ContentParseError> {
         let engine = detect_frontmatter_engine(&parse_ctx.source)?;
 
         let result = match engine {
@@ -93,12 +98,15 @@ impl ContentParser for Markdown {
         let end = result.matter.len() + engine.delimiter().len() * 2;
         let meta_span = 0..end;
 
-        let meta = ContentMeta::from_unresolved(MetaResolveContext {
-            source_code: &parse_ctx.source,
-            file_name: &parse_ctx.file_name,
-            meta_span,
-            unresolved: meta,
-        })?;
+        let meta = ContentMeta::from_unresolved(
+            config,
+            MetaResolveContext {
+                source_code: &parse_ctx.source,
+                file_name: &parse_ctx.file_name,
+                meta_span,
+                unresolved: meta,
+            },
+        )?;
 
         Ok(ContentPage {
             html,
@@ -154,11 +162,12 @@ title: Example
 # My Title
         ";
 
+        let config = Arc::new(SiteConfig::default());
         let context = ParsePageCtx {
             source: Arc::new(content.into()),
             file_name: "index.md".into(),
         };
-        let result = Markdown.parse(context).unwrap();
+        let result = Markdown.parse(config, context).unwrap();
         assert_eq!(result.meta.title, "Example");
         assert_eq!(result.html, "<h1>My Title</h1>\n");
     }
@@ -173,11 +182,12 @@ title = "Example"
 # My Title
         "#;
 
+        let config = Arc::new(SiteConfig::default());
         let context = ParsePageCtx {
             source: Arc::new(content.into()),
             file_name: "index.md".into(),
         };
-        let result = Markdown.parse(context).unwrap();
+        let result = Markdown.parse(config, context).unwrap();
         assert_eq!(result.meta.title, "Example");
         assert_eq!(result.html, "<h1>My Title</h1>\n");
     }

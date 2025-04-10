@@ -79,13 +79,13 @@ pub struct ParsingError {
     pub(super) help: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Ast {
     source: Arc<String>,
     nodes: Vec<AstNode>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AstNode {
     Html(ByteOffset),
     Identifier(ByteOffset),
@@ -153,7 +153,7 @@ pub enum AstNode {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Operator {
     Equal,
     NotEqual,

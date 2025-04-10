@@ -7,7 +7,9 @@ use thiserror::Error;
 
 use crate::resources::{Pipeline, PipelineConfig, UnresolvedPipelineConfig};
 
-#[derive(Debug)]
+static DEFAULT_PORT: u16 = 8000;
+
+#[derive(Debug, Default)]
 pub struct SiteConfig {
     pub port: u16,
     pub resources_dirs: Vec<PathBuf>,
@@ -132,7 +134,8 @@ pub enum ConfigReadError {
     IO(#[from] std::io::Error),
 }
 
-pub fn load(root_dir: Option<PathBuf>, port: u16) -> Result<SiteConfig, ConfigReadError> {
+pub fn load(root_dir: Option<PathBuf>, port: Option<u16>) -> Result<SiteConfig, ConfigReadError> {
+    let port = port.unwrap_or(DEFAULT_PORT);
     let root_dir = match root_dir {
         Some(v) => v.absolutize()?.to_path_buf(),
         None => std::env::current_dir()?,

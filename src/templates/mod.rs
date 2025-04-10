@@ -29,15 +29,16 @@ pub enum TemplateError {
     ScriptingError(#[from] ParsingError),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PageTemplate {
-    path: PathBuf,
-    ast: scripting::Ast,
+    pub path: PathBuf,
+    pub ast: scripting::Ast,
 }
 
-pub async fn load_templates(
-    config: &SiteConfig,
-) -> Result<HashMap<PathBuf, PageTemplate>, TemplateError> {
+#[derive(Debug)]
+pub struct Templates(pub HashMap<PathBuf, PageTemplate>);
+
+pub async fn load_templates(config: &SiteConfig) -> Result<Templates, TemplateError> {
     if !config.templates_dir.exists() {
         return Err(TemplateError::NoTemplates);
     }
@@ -63,5 +64,5 @@ pub async fn load_templates(
         .map(|template| (template.path.clone(), template))
         .collect::<HashMap<_, _>>();
 
-    Ok(templates)
+    Ok(Templates(templates))
 }
