@@ -223,8 +223,26 @@ impl Parser {
         let left = self.lexer.next().transpose()?;
         let mut left = match left {
             Some(Token::Identifier(offset)) => AstNode::Identifier(offset),
-            Some(Token::Int(offset)) => AstNode::IntLiteral(offset),
-            Some(Token::Float(offset)) => AstNode::FloatLiteral(offset),
+            Some(Token::Int(offset)) => AstNode::IntLiteral(
+                offset,
+                self.source[offset.range()]
+                    .parse()
+                    .map_err(|e| ParsingError {
+                        src: self.source.clone(),
+                        at: offset.into(),
+                        help: format!("Failed to parse as integer: {e:?}"),
+                    })?,
+            ),
+            Some(Token::Float(offset)) => AstNode::FloatLiteral(
+                offset,
+                self.source[offset.range()]
+                    .parse()
+                    .map_err(|e| ParsingError {
+                        src: self.source.clone(),
+                        at: offset.into(),
+                        help: format!("Failed to parse as integer: {e:?}"),
+                    })?,
+            ),
             Some(Token::StringLiteral(offset)) => AstNode::StringLiteral(offset),
             Some(token) if token.is_operator() => self.parse_operator(token)?,
             Some(token) => {
@@ -537,6 +555,10 @@ mod tests {
             offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
         },
+        BooleanLiteral {
+            offset: ByteOffsetSnapshot<'ast>,
+            content: &'ast str,
+        },
         FloatLiteral {
             offset: ByteOffsetSnapshot<'ast>,
             content: &'ast str,
@@ -628,11 +650,15 @@ mod tests {
                 content: &source[offset.range()],
                 offset: ByteOffsetSnapshot::with_content(offset, source),
             },
-            AstNode::IntLiteral(offset) => AstNodeSnapshot::IntLiteral {
+            AstNode::IntLiteral(offset, _) => AstNodeSnapshot::IntLiteral {
                 content: &source[offset.range()],
                 offset: ByteOffsetSnapshot::with_content(offset, source),
             },
-            AstNode::FloatLiteral(offset) => AstNodeSnapshot::FloatLiteral {
+            AstNode::FloatLiteral(offset, _) => AstNodeSnapshot::FloatLiteral {
+                content: &source[offset.range()],
+                offset: ByteOffsetSnapshot::with_content(offset, source),
+            },
+            AstNode::BooleanLiteral(offset, _) => AstNodeSnapshot::BooleanLiteral {
                 content: &source[offset.range()],
                 offset: ByteOffsetSnapshot::with_content(offset, source),
             },

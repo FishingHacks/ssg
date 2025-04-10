@@ -89,8 +89,9 @@ pub struct Ast {
 pub enum AstNode {
     Html(ByteOffset),
     Identifier(ByteOffset),
-    IntLiteral(ByteOffset),
-    FloatLiteral(ByteOffset),
+    IntLiteral(ByteOffset, i64),
+    FloatLiteral(ByteOffset, f64),
+    BooleanLiteral(ByteOffset, bool),
     StringLiteral(ByteOffset),
     Variable {
         ident: ByteOffset,
@@ -212,8 +213,9 @@ impl AstNode {
             AstNode::Html(offset)
             | AstNode::Identifier(offset)
             | AstNode::StringLiteral(offset)
-            | AstNode::IntLiteral(offset)
-            | AstNode::FloatLiteral(offset) => *offset,
+            | AstNode::IntLiteral(offset, _)
+            | AstNode::BooleanLiteral(offset, _)
+            | AstNode::FloatLiteral(offset, _) => *offset,
             AstNode::Block { offset, .. } => *offset,
             AstNode::Not { offset, .. } => *offset,
             AstNode::Extend { offset, .. } => *offset,
@@ -234,7 +236,187 @@ pub fn parse_template(template: String) -> Result<Ast, ParsingError> {
     let source = Arc::new(template);
     let lexer = Lexer::new(source.clone());
     let mut parser = Parser::new(source.clone(), lexer);
-    let ast = parser.parse_all()?;
+    let mut ast = parser.parse_all()?;
+    optimize_ast(&mut ast);
 
     Ok(ast)
+}
+
+pub fn optimize_ast(ast: &mut Ast) {
+    ast.nodes
+        .iter_mut()
+        .for_each(|node| const_eval_node(node, &ast.source));
+}
+
+fn const_eval_node(this: &mut AstNode, source: &str) {
+    match this {
+        AstNode::Identifier(_)
+        | AstNode::IntLiteral(..)
+        | AstNode::FloatLiteral(..)
+        | AstNode::BooleanLiteral(..)
+        | AstNode::StringLiteral(_)
+        | AstNode::Variable { .. }
+        | AstNode::Extend { .. }
+        | AstNode::Slot { .. }
+        | AstNode::Html(_) => {}
+        AstNode::FunctionCall {
+            function: expr,
+            args: body,
+            ..
+        }
+        | AstNode::Render {
+            component: expr,
+            body,
+            ..
+        }
+        | AstNode::ForLoop {
+            list: expr, body, ..
+        } => {
+            const_eval_node(expr, source);
+            body.iter_mut().for_each(|n| const_eval_node(n, source));
+        }
+        AstNode::Block { body, .. } => body.iter_mut().for_each(|n| const_eval_node(n, source)),
+        AstNode::MemberAccess { object, .. } => const_eval_node(object, source),
+        AstNode::IfStatement {
+            condition,
+            truthy,
+            falsy,
+            ..
+        } => {
+            const_eval_node(condition, source);
+            truthy.iter_mut().for_each(|n| const_eval_node(n, source));
+            falsy.iter_mut().for_each(|n| const_eval_node(n, source));
+        }
+        AstNode::Not { expr, offset } => {
+            const_eval_node(expr, source);
+            if let AstNode::BooleanLiteral(b_offset, val) = &**expr {
+                *this = AstNode::BooleanLiteral(*offset + *b_offset, !*val);
+            }
+        }
+        AstNode::Minus { expr, offset } => {
+            const_eval_node(expr, source);
+            if let AstNode::IntLiteral(b_offset, val) = &**expr {
+                *this = AstNode::IntLiteral(*offset + *b_offset, -*val);
+            }
+        }
+        AstNode::BinaryOp {
+            left,
+            right,
+            offset,
+            operator,
+        } => {
+            const_eval_node(left, source);
+            const_eval_node(right, source);
+            let offset = *offset + left.loc() + right.loc();
+            match *operator {
+                Operator::Equal => {
+                    if let Some(v) = ast_nodes_eq(left, right, source) {
+                        *this = AstNode::BooleanLiteral(offset, v);
+                    }
+                }
+                Operator::NotEqual => {
+                    if let Some(v) = ast_nodes_eq(left, right, source) {
+                        *this = AstNode::BooleanLiteral(offset, !v);
+                    }
+                }
+                Operator::GreaterEqual => {
+                    if let (AstNode::IntLiteral(_, l), AstNode::IntLiteral(_, r)) =
+                        (&**left, &**right)
+                    {
+                        *this = AstNode::BooleanLiteral(offset, *l >= *r);
+                    }
+                }
+                Operator::LesserEqual => {
+                    if let (AstNode::IntLiteral(_, l), AstNode::IntLiteral(_, r)) =
+                        (&**left, &**right)
+                    {
+                        *this = AstNode::BooleanLiteral(offset, *l <= *r);
+                    }
+                }
+                Operator::Greater => {
+                    if let (AstNode::IntLiteral(_, l), AstNode::IntLiteral(_, r)) =
+                        (&**left, &**right)
+                    {
+                        *this = AstNode::BooleanLiteral(offset, *l > *r);
+                    }
+                }
+                Operator::Lesser => {
+                    if let (AstNode::IntLiteral(_, l), AstNode::IntLiteral(_, r)) =
+                        (&**left, &**right)
+                    {
+                        *this = AstNode::BooleanLiteral(offset, *l < *r);
+                    }
+                }
+                Operator::Plus => {
+                    if let (AstNode::IntLiteral(_, l), AstNode::IntLiteral(_, r)) =
+                        (&**left, &**right)
+                    {
+                        *this = AstNode::IntLiteral(offset, *l + *r);
+                    }
+                }
+                Operator::Minus => {
+                    if let (AstNode::IntLiteral(_, l), AstNode::IntLiteral(_, r)) =
+                        (&**left, &**right)
+                    {
+                        *this = AstNode::IntLiteral(offset, *l - *r);
+                    }
+                }
+                Operator::Mul => {
+                    if let (AstNode::IntLiteral(_, l), AstNode::IntLiteral(_, r)) =
+                        (&**left, &**right)
+                    {
+                        *this = AstNode::IntLiteral(offset, *l * *r);
+                    }
+                }
+                Operator::Div => {
+                    if let (AstNode::IntLiteral(_, l), AstNode::IntLiteral(_, r)) =
+                        (&**left, &**right)
+                    {
+                        *this = AstNode::IntLiteral(offset, *l / *r);
+                    }
+                }
+                Operator::Modulo => {
+                    if let (AstNode::IntLiteral(_, l), AstNode::IntLiteral(_, r)) =
+                        (&**left, &**right)
+                    {
+                        let l = *l;
+                        let r = *r;
+                        *this = AstNode::IntLiteral(offset, ((l % r) + r) % r);
+                    }
+                }
+                Operator::And => {
+                    if let (AstNode::BooleanLiteral(_, l), AstNode::BooleanLiteral(_, r)) =
+                        (&**left, &**right)
+                    {
+                        *this = AstNode::BooleanLiteral(offset, *l && *r);
+                    }
+                }
+                Operator::Or => {
+                    if let (AstNode::BooleanLiteral(_, l), AstNode::BooleanLiteral(_, r)) =
+                        (&**left, &**right)
+                    {
+                        *this = AstNode::BooleanLiteral(offset, *l || *r);
+                    }
+                }
+                Operator::Not
+                | Operator::Either
+                | Operator::LeftParen
+                | Operator::RightParen
+                | Operator::Dot => {}
+            }
+        }
+    }
+}
+
+fn ast_nodes_eq(node_l: &AstNode, node_r: &AstNode, source: &str) -> Option<bool> {
+    match (node_l, node_r) {
+        (AstNode::IntLiteral(_, v1), AstNode::IntLiteral(_, v2)) => Some(v1 == v2),
+        (AstNode::FloatLiteral(_, v1), AstNode::FloatLiteral(_, v2)) => Some(v1 == v2),
+        (AstNode::BooleanLiteral(_, v1), AstNode::BooleanLiteral(_, v2)) => Some(v1 == v2),
+        (AstNode::StringLiteral(offset1), AstNode::StringLiteral(offset2)) => {
+            Some(source[offset1.range()] == source[offset2.range()])
+        }
+
+        _ => None,
+    }
 }

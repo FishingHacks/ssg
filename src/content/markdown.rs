@@ -118,6 +118,8 @@ impl ContentParser for Markdown {
 
 #[cfg(test)]
 mod tests {
+    use path_absolutize::Absolutize;
+
     use super::*;
 
     #[test]
@@ -158,6 +160,7 @@ title = "Example"
 date: 2024-02-02T04:14:54-08:00
 draft: false
 title: Example
+template: index.html
 ---
 # My Title
         ";
@@ -167,8 +170,18 @@ title: Example
             source: Arc::new(content.into()),
             file_name: "index.md".into(),
         };
-        let result = Markdown.parse(config, context).unwrap();
+        let result = Markdown.parse(config.clone(), context).unwrap();
         assert_eq!(result.meta.title, "Example");
+        assert!(!result.meta.draft);
+        assert_eq!(
+            result.meta.template,
+            config
+                .templates_dir
+                .join("index.html")
+                .absolutize()
+                .unwrap()
+        );
+        assert_eq!(result.meta.date, "2024-02-02T04:14:54-08:00");
         assert_eq!(result.html, "<h1>My Title</h1>\n");
     }
 
@@ -178,6 +191,7 @@ title: Example
 date = "2024-02-02T04:14:54-08:00"
 draft = false
 title = "Example"
+template = "index.html"
 +++
 # My Title
         "#;
@@ -187,8 +201,18 @@ title = "Example"
             source: Arc::new(content.into()),
             file_name: "index.md".into(),
         };
-        let result = Markdown.parse(config, context).unwrap();
+        let result = Markdown.parse(config.clone(), context).unwrap();
         assert_eq!(result.meta.title, "Example");
+        assert!(!result.meta.draft);
+        assert_eq!(
+            result.meta.template,
+            config
+                .templates_dir
+                .join("index.html")
+                .absolutize()
+                .unwrap()
+        );
+        assert_eq!(result.meta.date, "2024-02-02T04:14:54-08:00");
         assert_eq!(result.html, "<h1>My Title</h1>\n");
     }
 }
