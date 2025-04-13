@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use comrak::{ComrakOptions, markdown_to_html};
@@ -58,7 +59,7 @@ impl ContentParser for Markdown {
     fn parse(
         &self,
         config: Arc<SiteConfig>,
-        parse_ctx: ParsePageCtx,
+        mut parse_ctx: ParsePageCtx,
     ) -> Result<ContentPage, ContentParseError> {
         let engine = detect_frontmatter_engine(&parse_ctx.source)?;
 
@@ -98,6 +99,35 @@ impl ContentParser for Markdown {
         let end = result.matter.len() + engine.delimiter().len() * 2;
         let meta_span = 0..end;
 
+        parse_ctx.path.set_extension("");
+        if parse_ctx
+            .path
+            .file_name()
+            .map(|v| v == "_index")
+            .unwrap_or(false)
+        {
+            parse_ctx.path.pop();
+        }
+        let relative_path = parse_ctx
+            .path
+            .strip_prefix(&config.content_dir)
+            .expect("file in content_dir should never fail to be stripped");
+        let mut path = String::new();
+        for component in relative_path.components() {
+            match component {
+                std::path::Component::Prefix(_) => todo!(),
+                std::path::Component::RootDir => unreachable!("not allowed in html paths"),
+                std::path::Component::CurDir => (),
+                std::path::Component::ParentDir => unreachable!("not allowed in html paths"),
+                std::path::Component::Normal(s) => {
+                    if !path.is_empty() {
+                        path.push('/');
+                    }
+                    path.push_str(&s.to_string_lossy());
+                }
+            }
+        }
+
         let meta = ContentMeta::from_unresolved(
             config,
             MetaResolveContext {
@@ -112,6 +142,7 @@ impl ContentParser for Markdown {
             html,
             meta,
             source: parse_ctx.source,
+            path,
         })
     }
 }

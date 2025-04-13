@@ -34,10 +34,12 @@ impl From<Option<&OsStr>> for FileType {
 #[serde(untagged)]
 pub enum MetaValue {
     String(String),
+    // TODO: Make this be vec<MEtavalue>
     Vec(Vec<String>),
     Bool(bool),
     Number(i32),
     Float(f32),
+    // TODO: Make this be hashma<string, MEtavalue>
     HashMap(HashMap<String, String>),
 }
 
@@ -57,9 +59,10 @@ pub struct ContentMeta {
 
 #[derive(Debug)]
 pub struct ContentPage {
-    source: Arc<String>,
-    meta: ContentMeta,
-    html: String,
+    pub source: Arc<String>,
+    pub meta: ContentMeta,
+    pub html: String,
+    pub path: String,
 }
 
 impl ContentPage {
@@ -259,6 +262,7 @@ Examples:
 pub struct ParsePageCtx {
     pub source: Arc<String>,
     pub file_name: String,
+    pub path: PathBuf,
 }
 
 pub trait ContentParser {
@@ -318,6 +322,7 @@ pub async fn parse_content(
                     ParsePageCtx {
                         source: content,
                         file_name,
+                        path,
                     },
                 )
             })

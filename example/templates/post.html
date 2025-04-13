@@ -1,13 +1,13 @@
 {{ extend "_base.html" }}
 
 {{ block "head" }}
-<link rel="stylesheet" href="{{ site.assets.get('css/home.css') }}" />
+<meta name="description" content="uwu~">
 {{ end }}
 
 {{ block "page" }}
 <main>
     <div>
-        {{ render page.content end }}
+        {{ slot }}
     </div>
 </main>
 {{ end }}

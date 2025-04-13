@@ -1,13 +1,19 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 
+use inlining::{ProcessedPage, TemplateInliner};
 use miette::Diagnostic;
 use thiserror::Error;
 
 use crate::config::{ResolvePath, SiteConfig};
 use crate::scripting::{self, ParsingError};
 
+mod execute;
 mod inlining;
+
+pub use execute::{Executor, Value};
+pub use inlining::TemplateProcessingError;
 
 #[derive(Debug, Error, Diagnostic)]
 pub enum TemplateError {
@@ -40,6 +46,8 @@ pub struct PageTemplate {
 #[derive(Debug)]
 pub struct Templates(pub HashMap<PathBuf, PageTemplate>);
 
+pub type ProcessedTemplates = HashMap<PathBuf, ProcessedPage>;
+
 pub async fn load_templates(config: &SiteConfig) -> Result<Templates, TemplateError> {
     if !config.templates_dir.exists() {
         return Err(TemplateError::NoTemplates);
@@ -67,4 +75,13 @@ pub async fn load_templates(config: &SiteConfig) -> Result<Templates, TemplateEr
         .collect::<HashMap<_, _>>();
 
     Ok(Templates(templates))
+}
+
+pub fn process_templates(
+    templates: Templates,
+    cfg: Arc<SiteConfig>,
+) -> Result<ProcessedTemplates, TemplateProcessingError> {
+    let mut inliner = TemplateInliner::new(templates.0, cfg);
+    while inliner.process()? {}
+    Ok(inliner.into_inner())
 }

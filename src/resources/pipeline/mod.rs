@@ -159,8 +159,8 @@ impl Pipeline {
         for (idx, entry) in self.entries.iter().enumerate() {
             println!(
                 "Running pipeline {name} for {} (Step {}/{entries})",
+                path.display(),
                 idx + 1,
-                path.display()
             );
             // make the previous outfile this infile and create a new outfile
             infile = outfile;

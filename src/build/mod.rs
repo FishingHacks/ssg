@@ -3,11 +3,14 @@ use std::sync::Arc;
 
 use miette::Diagnostic;
 use thiserror::Error;
+use tokio::task::JoinError;
 
 use crate::config::{ConfigReadError, SiteConfig};
 use crate::content::{ContentPage, ContentParseError};
 use crate::resources::ContextPipelineError;
-use crate::templates::{TemplateError, Templates};
+use crate::templates::{
+    Executor, ProcessedTemplates, TemplateError, TemplateProcessingError, Templates,
+};
 
 #[derive(Debug, Error, Diagnostic)]
 pub enum BuildError {
@@ -21,6 +24,10 @@ pub enum BuildError {
     #[error(transparent)]
     #[diagnostic(transparent)]
     TemplateError(#[from] TemplateError),
+
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    TemplateProcessing(#[from] TemplateProcessingError),
 
     #[error(transparent)]
     IO(#[from] std::io::Error),
@@ -41,8 +48,9 @@ pub async fn build(config: SiteConfig) -> miette::Result<(), BuildError> {
     let resources = config.pipeline_cfg.index_resources(&config);
 
     let templates = crate::templates::load_templates(&config).await?;
+    let processed_templates = crate::templates::process_templates(templates, config.clone())?;
     let pages = crate::content::parse_content(config.clone()).await?;
-    resolve_pages(templates, pages).await;
+    resolve_pages(processed_templates, pages, config.clone()).await?;
 
     let resource_handles =
         futures::future::join_all(resources.iter().map(PathBuf::from).map(|path| {
@@ -66,15 +74,26 @@ pub async fn build(config: SiteConfig) -> miette::Result<(), BuildError> {
     Ok(())
 }
 
-async fn resolve_pages(templates: Templates, pages: Vec<ContentPage>) {
-    let templates = Arc::new(templates);
-
+async fn resolve_pages(
+    templates: ProcessedTemplates,
+    pages: Vec<ContentPage>,
+    config: Arc<SiteConfig>,
+) -> Result<(), BuildError> {
+    let mut executor = Executor::new(&templates);
+    let mut handles = Vec::new();
     for page in pages {
-        let _templates = templates.clone();
+        let output = executor.render_content(page.meta, page.html);
 
-        tokio::spawn(async move {
-            let templates = _templates;
-            let Some(template) = templates.0.get(&page.meta().template) else { todo!() };
-        });
+        let mut output_path = config.out_dir.join(page.path);
+        handles.push(tokio::spawn(async move {
+            tokio::fs::create_dir_all(&output_path).await?;
+            output_path.push("index.html");
+            tokio::fs::write(output_path, output).await
+        }));
     }
+    futures::future::try_join_all(handles)
+        .await?
+        .into_iter()
+        .collect::<Result<(), _>>()
+        .map_err(Into::into)
 }

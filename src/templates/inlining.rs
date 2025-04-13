@@ -11,16 +11,16 @@ use thiserror::Error;
 
 use super::PageTemplate;
 use crate::config::SiteConfig;
-use crate::scripting::{Ast, AstNode};
+use crate::scripting::AstNode;
 
 #[derive(Debug)]
 pub struct ProcessedPage {
-    extends: Option<PathBuf>,
+    pub extends: Option<PathBuf>,
     // if `ProcessedPage::extends` is `None`, this only has a single field, "".
-    blocks: HashMap<String, Vec<AstNode>>,
+    pub blocks: HashMap<String, Vec<AstNode>>,
     slots: Vec<String>,
-    source: Arc<String>,
-    path: PathBuf,
+    pub source: Arc<String>,
+    pub path: PathBuf,
 }
 
 pub struct TemplateInliner {
