@@ -81,8 +81,8 @@ pub struct ParsingError {
 
 #[derive(Debug, Clone)]
 pub struct Ast {
-    source: Arc<String>,
-    nodes: Vec<AstNode>,
+    pub source: Arc<String>,
+    pub nodes: Vec<AstNode>,
 }
 
 #[derive(Debug, Clone)]
@@ -208,7 +208,7 @@ impl Operator {
 }
 
 impl AstNode {
-    fn loc(&self) -> ByteOffset {
+    pub fn loc(&self) -> ByteOffset {
         match self {
             AstNode::Html(offset)
             | AstNode::Identifier(offset)

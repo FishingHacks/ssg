@@ -7,6 +7,8 @@ use thiserror::Error;
 use crate::config::{ResolvePath, SiteConfig};
 use crate::scripting::{self, ParsingError};
 
+mod inlining;
+
 #[derive(Debug, Error, Diagnostic)]
 pub enum TemplateError {
     #[error(transparent)]
